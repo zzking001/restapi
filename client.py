@@ -68,6 +68,8 @@ def validate(data, required_fields, context=""):
     return True
 
 
+# ========== 设备 CRUD 测试（原有，保留） ==========
+
 # === GET：查列表 ===
 print("=== GET /devices（查列表）===")
 r = req("GET", "/devices")
@@ -165,5 +167,203 @@ elif r.status_code == 200:
         print(r.status_code, "->", len(data), "台设备")
     else:
         print(f"  [结构错误] 期望 list，实际 {type(data).__name__}")
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+
+# ========== 系统监控测试（新增，只读） ==========
+
+# === GET：CPU 信息 ===
+print("\n=== GET /cpus（CPU 信息）===")
+r = req("GET", "/cpus")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["count", "cpus"], "CPU 信息"):
+        print(r.status_code, "->", data["count"], "个 CPU")
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === GET：内存信息 ===
+print("=== GET /memory（内存信息）===")
+r = req("GET", "/memory")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["MemTotal", "MemFree"], "内存信息"):
+        print(r.status_code, "->", data)
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === GET：运行时间 ===
+print("=== GET /uptime（运行时间）===")
+r = req("GET", "/uptime")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["uptime_seconds", "uptime_days"], "运行时间"):
+        print(r.status_code, "->", data)
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+
+# ========== 网络接口测试（新增，只读） ==========
+
+# === GET：网卡列表 ===
+print("\n=== GET /interfaces（网卡列表）===")
+r = req("GET", "/interfaces")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if isinstance(data, list):
+        print(r.status_code, "->", len(data), "个网卡")
+    else:
+        print(f"  [结构错误] 期望 list，实际 {type(data).__name__}")
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === GET：eth0 详情 ===
+print("=== GET /interfaces/eth0（eth0 详情）===")
+r = req("GET", "/interfaces/eth0")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["name", "ip", "mac", "status"], "网卡详情"):
+        print(r.status_code, "->", data)
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === GET：eth0 TSN 能力 ===
+print("=== GET /interfaces/eth0/tsn（eth0 TSN 能力）===")
+r = req("GET", "/interfaces/eth0/tsn")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["interface", "tsn"], "TSN 能力"):
+        print(r.status_code, "->", data)
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+
+# ========== TSN 流 CRUD 测试（新增） ==========
+
+# === GET：流列表 ===
+print("\n=== GET /tsn/streams（流列表）===")
+r = req("GET", "/tsn/streams")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if isinstance(data, list):
+        print(r.status_code, "->", len(data), "条流")
+    else:
+        print(f"  [结构错误] 期望 list，实际 {type(data).__name__}")
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === GET：查单条流 ===
+print("=== GET /tsn/streams/1（查单条）===")
+r = req("GET", "/tsn/streams/1")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["id", "stream_id", "status"], "流详情"):
+        print(r.status_code, "->", data)
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === POST：新增一条流 ===
+print("=== POST /tsn/streams（新增）===")
+r = req(
+    "POST",
+    "/tsn/streams",
+    json={
+        "stream_id": "a0-00-00-00-00-00-00-03",
+        "talker": "TSN-Talker-03",
+        "listener": "TSN-Listener-02",
+        "vlan": 300,
+        "pcp": 4,
+        "bandwidth": "200Mbps",
+        "status": "active",
+    },
+)
+if r is None:
+    pass
+elif r.status_code in (200, 201):
+    data = safe_json(r)
+    if data and validate(data, ["id"], "新增流响应"):
+        print(r.status_code, "->", data)
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === PUT：更新 id=1 的状态为 paused ===
+print("=== PUT /tsn/streams/1（更新状态）===")
+r = req("PUT", "/tsn/streams/1", json={"status": "paused"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["id", "status"], "更新后流"):
+        print(r.status_code, "->", data)
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === DELETE：删除 id=2 ===
+print("=== DELETE /tsn/streams/2（删除）===")
+r = req("DELETE", "/tsn/streams/2")
+if r is None:
+    pass
+elif r.status_code in (200, 204):
+    print(r.status_code, "-> 无响应体（204 正常）")
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === GET：验证已删除（404 是预期结果）===
+print("=== GET /tsn/streams/2（应 404）===")
+r = req("GET", "/tsn/streams/2")
+if r is None:
+    pass
+elif r.status_code == 404:
+    print(r.status_code, "-> 已删除确认（404 正确）")
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["id"], "流详情"):
+        print(r.status_code, "-> 没删掉？流还在", data)
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === GET：最终列表，确认变化 ===
+print("=== GET /tsn/streams（最终列表）===")
+r = req("GET", "/tsn/streams")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if isinstance(data, list):
+        print(r.status_code, "->", len(data), "条流")
+    else:
+        print(f"  [结构错误] 期望 list，实际 {type(data).__name__}")
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+
+# ========== PTP 状态测试（新增，只读） ==========
+
+# === GET：PTP 同步状态 ===
+print("\n=== GET /tsn/ptp/status（PTP 同步状态）===")
+r = req("GET", "/tsn/ptp/status")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["interface", "ptp4l_state"], "PTP 状态"):
+        print(r.status_code, "->", data)
 else:
     print(f"  [应用错误] {r.status_code} {r.reason}")
