@@ -68,7 +68,7 @@ def validate(data, required_fields, context=""):
     return True
 
 
-# ========== 设备 CRUD 测试（原有，保留） ==========
+# ========== 设备 CRUD 测试 ==========
 
 # === GET：查列表 ===
 print("=== GET /devices（查列表）===")
@@ -120,14 +120,34 @@ elif r.status_code in (200, 201):
 else:
     print(f"  [应用错误] {r.status_code} {r.reason}")
 
-# === PUT：更新 id=1 的状态为 offline ===
-print("=== PUT /devices/1（更新状态）===")
-r = req("PUT", "/devices/1", json={"status": "offline"})
+# === PATCH：部分更新 id=1 的状态为 offline ===
+print("=== PATCH /devices/1（部分更新）===")
+r = req("PATCH", "/devices/1", json={"status": "offline"})
 if r is None:
     pass
 elif r.status_code == 200:
     data = safe_json(r)
     if data and validate(data, ["id", "status"], "更新后设备"):
+        print(r.status_code, "->", data)
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === PUT：全量替换 id=1 ===
+print("=== PUT /devices/1（全量替换）===")
+r = req("PUT", "/devices/1", json={
+    "name": "TSN-Full-Replace",
+    "type": "bridge",
+    "mac": "ff:ff:ff:ff:ff:ff",
+    "stream_id": "-",
+    "vlan": 1,
+    "pcp": 0,
+    "status": "offline",
+})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["id", "name"], "全量替换后设备"):
         print(r.status_code, "->", data)
 else:
     print(f"  [应用错误] {r.status_code} {r.reason}")
@@ -171,7 +191,7 @@ else:
     print(f"  [应用错误] {r.status_code} {r.reason}")
 
 
-# ========== 系统监控测试（新增，只读） ==========
+# ========== 系统监控测试（只读） ==========
 
 # === GET：CPU 信息 ===
 print("\n=== GET /cpus（CPU 信息）===")
@@ -210,7 +230,7 @@ else:
     print(f"  [应用错误] {r.status_code} {r.reason}")
 
 
-# ========== 网络接口测试（新增，只读） ==========
+# ========== 网络接口测试（只读） ==========
 
 # === GET：网卡列表 ===
 print("\n=== GET /interfaces（网卡列表）===")
@@ -251,7 +271,7 @@ else:
     print(f"  [应用错误] {r.status_code} {r.reason}")
 
 
-# ========== TSN 流 CRUD 测试（新增） ==========
+# ========== TSN 流 CRUD 测试 ==========
 
 # === GET：流列表 ===
 print("\n=== GET /tsn/streams（流列表）===")
@@ -303,14 +323,34 @@ elif r.status_code in (200, 201):
 else:
     print(f"  [应用错误] {r.status_code} {r.reason}")
 
-# === PUT：更新 id=1 的状态为 paused ===
-print("=== PUT /tsn/streams/1（更新状态）===")
-r = req("PUT", "/tsn/streams/1", json={"status": "paused"})
+# === PATCH：部分更新 id=1 的状态为 paused ===
+print("=== PATCH /tsn/streams/1（部分更新）===")
+r = req("PATCH", "/tsn/streams/1", json={"status": "paused"})
 if r is None:
     pass
 elif r.status_code == 200:
     data = safe_json(r)
     if data and validate(data, ["id", "status"], "更新后流"):
+        print(r.status_code, "->", data)
+else:
+    print(f"  [应用错误] {r.status_code} {r.reason}")
+
+# === PUT：全量替换 id=1 ===
+print("=== PUT /tsn/streams/1（全量替换）===")
+r = req("PUT", "/tsn/streams/1", json={
+    "stream_id": "ff-ff-ff-ff-ff-ff-ff-ff",
+    "talker": "TSN-Talker-Full",
+    "listener": "TSN-Listener-Full",
+    "vlan": 999,
+    "pcp": 7,
+    "bandwidth": "10Gbps",
+    "status": "active",
+})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and validate(data, ["id", "stream_id"], "全量替换后流"):
         print(r.status_code, "->", data)
 else:
     print(f"  [应用错误] {r.status_code} {r.reason}")
@@ -354,7 +394,7 @@ else:
     print(f"  [应用错误] {r.status_code} {r.reason}")
 
 
-# ========== PTP 状态测试（新增，只读） ==========
+# ========== PTP 状态测试（只读） ==========
 
 # === GET：PTP 同步状态 ===
 print("\n=== GET /tsn/ptp/status（PTP 同步状态）===")
