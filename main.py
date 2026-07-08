@@ -3,7 +3,7 @@
 import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from routers import system, interfaces, devices, tsn
+from routers import interfaces, logs
 
 logging.basicConfig(level=logging.INFO)
 
@@ -16,7 +16,5 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="TSN REST API", version="2.0.0", lifespan=lifespan)
 #注册路由，组装模块，新增功能只需加一行
 #注册路由 = 告诉 app，收到某类请求时交给谁处理
-app.include_router(system.router)
 app.include_router(interfaces.router)
-app.include_router(devices.router)
-app.include_router(tsn.router)
+app.include_router(logs.router)

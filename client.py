@@ -68,167 +68,6 @@ def validate(data, required_fields, context=""):
     return True
 
 
-# ========== 设备 CRUD 测试 ==========
-
-# === GET：查列表 ===
-print("=== GET /devices（查列表）===")
-r = req("GET", "/devices")
-if r is None:
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)
-    if isinstance(data, list):
-        print(r.status_code, "->", len(data), "台设备")
-    else:
-        print(f"  [结构错误] 期望 list，实际 {type(data).__name__}")
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === GET：查单台 ===
-print("=== GET /devices/1（查单台）===")
-r = req("GET", "/devices/1")
-if r is None:
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)
-    if data and validate(data, ["id", "name", "status"], "设备详情"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === POST：新增一台 Talker ===
-print("=== POST /devices（新增）===")
-r = req(
-    "POST",
-    "/devices",
-    json={
-        "name": "TSN-Talker-02",
-        "type": "talker",
-        "mac": "00:1b:44:11:3a:c1",
-        "stream_id": "a0-00-00-00-00-00-00-02",
-        "vlan": 200,
-        "pcp": 2,
-        "status": "online",
-    },
-)
-if r is None:
-    pass
-elif r.status_code in (200, 201):
-    data = safe_json(r)
-    if data and validate(data, ["id"], "新增设备响应"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === PATCH：部分更新 id=1 的状态为 offline ===
-print("=== PATCH /devices/1（部分更新）===")
-r = req("PATCH", "/devices/1", json={"status": "offline"})
-if r is None:
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)
-    if data and validate(data, ["id", "status"], "更新后设备"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === PUT：全量替换 id=1 ===
-print("=== PUT /devices/1（全量替换）===")
-r = req("PUT", "/devices/1", json={
-    "name": "TSN-Full-Replace",
-    "type": "bridge",
-    "mac": "ff:ff:ff:ff:ff:ff",
-    "stream_id": "-",
-    "vlan": 1,
-    "pcp": 0,
-    "status": "offline",
-})
-if r is None:
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)
-    if data and validate(data, ["id", "name"], "全量替换后设备"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === DELETE：删除 id=2 ===
-print("=== DELETE /devices/2（删除）===")
-r = req("DELETE", "/devices/2")
-if r is None:
-    pass
-elif r.status_code in (200, 204):
-    print(r.status_code, "-> 无响应体（204 正常）")
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === GET：验证已删除（404 是预期结果）===
-print("=== GET /devices/2（应 404）===")
-r = req("GET", "/devices/2")
-if r is None:
-    pass
-elif r.status_code == 404:
-    print(r.status_code, "-> 已删除确认（404 正确）")
-elif r.status_code == 200:
-    data = safe_json(r)
-    if data and validate(data, ["id"], "设备详情"):
-        print(r.status_code, "-> 没删掉？设备还在", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === GET：最终列表，确认变化 ===
-print("=== GET /devices（最终列表）===")
-r = req("GET", "/devices")
-if r is None:
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)
-    if isinstance(data, list):
-        print(r.status_code, "->", len(data), "台设备")
-    else:
-        print(f"  [结构错误] 期望 list，实际 {type(data).__name__}")
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-
-# ========== 系统监控测试（只读） ==========
-
-# === GET：CPU 信息 ===
-print("\n=== GET /cpus（CPU 信息）===")
-r = req("GET", "/cpus")
-if r is None:
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)
-    if data and validate(data, ["count", "cpus"], "CPU 信息"):
-        print(r.status_code, "->", data["count"], "个 CPU")
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === GET：内存信息 ===
-print("=== GET /memory（内存信息）===")
-r = req("GET", "/memory")
-if r is None:
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)
-    if data and validate(data, ["MemTotal", "MemFree"], "内存信息"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === GET：运行时间 ===
-print("=== GET /uptime（运行时间）===")
-r = req("GET", "/uptime")
-if r is None:
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)
-    if data and validate(data, ["uptime_seconds", "uptime_days"], "运行时间"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
 
 # ========== 网络接口测试（只读） ==========
 
@@ -271,139 +110,179 @@ else:
     print(f"  [应用错误] {r.status_code} {r.reason}")
 
 
-# ========== TSN 流 CRUD 测试 ==========
+# ==================== 日志查询测试 ====================
 
-# === GET：流列表 ===
-print("\n=== GET /tsn/streams（流列表）===")
-r = req("GET", "/tsn/streams")
+def check_logs(data, name=""):
+    """校验日志分页响应结构：total、page、page_size、logs 数组。"""
+    if not validate(data, ["total", "page", "page_size", "logs"], name):
+        return False
+    log_list = data.get("logs", [])
+    if not isinstance(log_list, list):
+        log.warning(f"{name}：logs 不是数组")
+        return False
+    return True
+
+
+# ======== 1. 时间同步日志 ========
+print("\n=== GET /logs/timesync（时间同步 - 全部）===")
+r = req("GET", "/logs/timesync")
 if r is None:
     pass
 elif r.status_code == 200:
     data = safe_json(r)
-    if isinstance(data, list):
-        print(r.status_code, "->", len(data), "条流")
-    else:
-        print(f"  [结构错误] 期望 list，实际 {type(data).__name__}")
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
+    if data and check_logs(data, "时间同步日志"):
+        print(r.status_code, f"-> total={data['total']}, page={data['page']}, 返回 {len(data['logs'])} 条")
 
-# === GET：查单条流 ===
-print("=== GET /tsn/streams/1（查单条）===")
-r = req("GET", "/tsn/streams/1")
+# 按日志级别过滤
+print("=== GET /logs/timesync?level=ERROR&device_id=SW-01 ===")
+r = req("GET", "/logs/timesync", params={"level": "ERROR", "device_id": "SW-01"})
 if r is None:
     pass
 elif r.status_code == 200:
     data = safe_json(r)
-    if data and validate(data, ["id", "stream_id", "status"], "流详情"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
+    if data and check_logs(data, "时间同步-ERROR"):
+        print(r.status_code, f"-> total={data['total']} 条 ERROR 日志(SW-01)")
 
-# === POST：新增一条流 ===
-print("=== POST /tsn/streams（新增）===")
-r = req(
-    "POST",
-    "/tsn/streams",
-    json={
-        "stream_id": "a0-00-00-00-00-00-00-03",
-        "talker": "TSN-Talker-03",
-        "listener": "TSN-Listener-02",
-        "vlan": 300,
-        "pcp": 4,
-        "bandwidth": "200Mbps",
-        "status": "active",
-    },
-)
-if r is None:
-    pass
-elif r.status_code in (200, 201):
-    data = safe_json(r)
-    if data and validate(data, ["id"], "新增流响应"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === PATCH：部分更新 id=1 的状态为 paused ===
-print("=== PATCH /tsn/streams/1（部分更新）===")
-r = req("PATCH", "/tsn/streams/1", json={"status": "paused"})
+# 按事件类型 + 分页
+print("=== GET /logs/timesync?event_type=PERIODIC_STATS&page_size=3 ===")
+r = req("GET", "/logs/timesync", params={"event_type": "PERIODIC_STATS", "page_size": 3})
 if r is None:
     pass
 elif r.status_code == 200:
     data = safe_json(r)
-    if data and validate(data, ["id", "status"], "更新后流"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
+    if data and check_logs(data, "时间同步-PERIODIC_STATS"):
+        print(r.status_code, f"-> total={data['total']}, page_size=3, 返回 {len(data['logs'])} 条")
 
-# === PUT：全量替换 id=1 ===
-print("=== PUT /tsn/streams/1（全量替换）===")
-r = req("PUT", "/tsn/streams/1", json={
-    "stream_id": "ff-ff-ff-ff-ff-ff-ff-ff",
-    "talker": "TSN-Talker-Full",
-    "listener": "TSN-Listener-Full",
-    "vlan": 999,
-    "pcp": 7,
-    "bandwidth": "10Gbps",
-    "status": "active",
-})
+
+# ======== 2. 流量调度日志 ========
+print("\n=== GET /logs/scheduling（流量调度 - 全部）===")
+r = req("GET", "/logs/scheduling")
 if r is None:
     pass
 elif r.status_code == 200:
     data = safe_json(r)
-    if data and validate(data, ["id", "stream_id"], "全量替换后流"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
+    if data and check_logs(data, "调度日志"):
+        print(r.status_code, f"-> total={data['total']}, 返回 {len(data['logs'])} 条")
 
-# === DELETE：删除 id=2 ===
-print("=== DELETE /tsn/streams/2（删除）===")
-r = req("DELETE", "/tsn/streams/2")
-if r is None:
-    pass
-elif r.status_code in (200, 204):
-    print(r.status_code, "-> 无响应体（204 正常）")
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === GET：验证已删除（404 是预期结果）===
-print("=== GET /tsn/streams/2（应 404）===")
-r = req("GET", "/tsn/streams/2")
-if r is None:
-    pass
-elif r.status_code == 404:
-    print(r.status_code, "-> 已删除确认（404 正确）")
-elif r.status_code == 200:
-    data = safe_json(r)
-    if data and validate(data, ["id"], "流详情"):
-        print(r.status_code, "-> 没删掉？流还在", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === GET：最终列表，确认变化 ===
-print("=== GET /tsn/streams（最终列表）===")
-r = req("GET", "/tsn/streams")
+# 按调度类型过滤
+print("=== GET /logs/scheduling?schedule_type=802.1Qbv-TAS ===")
+r = req("GET", "/logs/scheduling", params={"schedule_type": "802.1Qbv-TAS"})
 if r is None:
     pass
 elif r.status_code == 200:
     data = safe_json(r)
-    if isinstance(data, list):
-        print(r.status_code, "->", len(data), "条流")
-    else:
-        print(f"  [结构错误] 期望 list，实际 {type(data).__name__}")
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
+    if data and check_logs(data, "调度-Qbv"):
+        print(r.status_code, f"-> total={data['total']} 条 Qbv 相关日志")
 
-
-# ========== PTP 状态测试（只读） ==========
-
-# === GET：PTP 同步状态 ===
-print("\n=== GET /tsn/ptp/status（PTP 同步状态）===")
-r = req("GET", "/tsn/ptp/status")
+# 按设备 + 队列过滤
+print("=== GET /logs/scheduling?device_id=SW-01&queue=Q0 ===")
+r = req("GET", "/logs/scheduling", params={"device_id": "SW-01", "queue": "Q0"})
 if r is None:
     pass
 elif r.status_code == 200:
     data = safe_json(r)
-    if data and validate(data, ["interface", "ptp4l_state"], "PTP 状态"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
+    if data and check_logs(data, "调度-SW-01-Q0"):
+        print(r.status_code, f"-> total={data['total']} 条 SW-01 Q0 日志")
+
+
+# ======== 3. 流过滤与警管日志 ========
+print("\n=== GET /logs/filtering（流过滤 - 全部）===")
+r = req("GET", "/logs/filtering")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "过滤日志"):
+        print(r.status_code, f"-> total={data['total']}, 返回 {len(data['logs'])} 条")
+
+# 按状态过滤（Red = 超出警管速率）
+print("=== GET /logs/filtering?status=Red ===")
+r = req("GET", "/logs/filtering", params={"status": "Red"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "过滤-Red"):
+        print(r.status_code, f"-> total={data['total']} 条 Red 判定日志")
+
+# 按资源类型 + 动作过滤
+print("=== GET /logs/filtering?resource_type=警管&operation=限流 ===")
+r = req("GET", "/logs/filtering", params={"resource_type": "警管", "operation": "限流"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "过滤-警管限流"):
+        print(r.status_code, f"-> total={data['total']} 条警管限流日志")
+
+
+# ======== 4. 网络资源配置日志 ========
+print("\n=== GET /logs/config（资源配置 - 全部）===")
+r = req("GET", "/logs/config")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "配置日志"):
+        print(r.status_code, f"-> total={data['total']}, 返回 {len(data['logs'])} 条")
+
+# 按事件类型过滤
+print("=== GET /logs/config?event_type=CONFIG_DEPLOY ===")
+r = req("GET", "/logs/config", params={"event_type": "CONFIG_DEPLOY"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "配置-下发"):
+        print(r.status_code, f"-> total={data['total']} 条配置下发日志")
+
+# 过滤 WARN 级别
+print("=== GET /logs/config?level=WARN&page_size=5 ===")
+r = req("GET", "/logs/config", params={"level": "WARN", "page_size": 5})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "配置-WARN"):
+        print(r.status_code, f"-> total={data['total']} 条 WARN, 返回 {len(data['logs'])} 条")
+
+
+# ======== 5. 硬件资源性能日志 ========
+print("\n=== GET /logs/hardware（硬件资源 - 全部）===")
+r = req("GET", "/logs/hardware")
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "硬件日志"):
+        print(r.status_code, f"-> total={data['total']}, 返回 {len(data['logs'])} 条")
+
+# 按指标类型过滤
+print("=== GET /logs/hardware?metric_type=thermal ===")
+r = req("GET", "/logs/hardware", params={"metric_type": "thermal"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "硬件-thermal"):
+        print(r.status_code, f"-> total={data['total']} 条温度/散热日志")
+
+# 多条件：设备 + 告警级别
+print("=== GET /logs/hardware?device_id=SW-02&level=WARN ===")
+r = req("GET", "/logs/hardware", params={"device_id": "SW-02", "level": "WARN"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "硬件-SW-02-WARN"):
+        print(r.status_code, f"-> total={data['total']} 条 SW-02 WARN 硬件日志")
+
+# 边界：翻页超出范围
+print("=== GET /logs/hardware?page=99&page_size=20（空页）===")
+r = req("GET", "/logs/hardware", params={"page": 99, "page_size": 20})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "硬件-空页"):
+        print(r.status_code, f"-> total={data['total']}, 返回 {len(data['logs'])} 条（预期 0）")
