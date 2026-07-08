@@ -1,0 +1,11 @@
+2026-03-01T10:00:00.000000000Z|SW-01|INFO|cpu|cpu_percent=12.5,cpu_temp=45.2|CPU利用率12.5%，温度45.2°C
+2026-03-01T10:00:05.000000000Z|SW-01|INFO|memory|mem_percent=34.8,mem_used=1677721600,mem_total=4294967296|内存使用率34.8%
+2026-03-01T10:00:00.000000000Z|SW-01|INFO|buffer|port=PORT-01,buffer_usage=512,buffer_total=4096|PORT-01缓冲使用512/4096
+2026-03-01T10:00:00.000000000Z|SW-01|INFO|buffer|port=PORT-02,buffer_usage=2048,buffer_total=4096|PORT-02缓冲使用2048/4096，接近50%
+2026-03-01T10:00:05.000000000Z|SW-01|WARN|buffer|port=PORT-02,buffer_usage=3584,buffer_total=4096,buffer_percent=87.5|PORT-02缓冲使用率87.5%，接近上限
+2026-03-01T10:00:10.000000000Z|SW-01|ERROR|buffer|port=PORT-02,buffer_usage=4096,buffer_total=4096,buffer_percent=100.0,overflow=25|PORT-02缓冲满，溢出25帧
+2026-03-01T10:00:00.000000000Z|SW-01|INFO|thermal|fan_speed=3200,temp_case=42.5,temp_core=45.2|风扇3200RPM，外壳42.5°C
+2026-03-01T10:00:10.000000000Z|SW-01|WARN|thermal|fan_speed=4500,temp_case=55.0,temp_core=62.3,temp_threshold=70|温度上升，风扇加速至4500RPM
+2026-03-01T10:00:00.000000000Z|ES-05|INFO|cpu|cpu_percent=8.3,cpu_temp=38.1|端系统CPU利用率8.3%
+2026-03-01T10:00:05.000000000Z|ES-05|INFO|memory|mem_percent=22.1,mem_used=524288000,mem_total=2147483648|端系统内存使用率22.1%
+2026-03-01T10:00:00.000000000Z|ES-05|INFO|power|port=P1,pse_enabled=true,power_w=15.4|P1端口PoE供电15.4W

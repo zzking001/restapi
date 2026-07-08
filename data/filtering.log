@@ -1,0 +1,12 @@
+2026-03-01T10:00:00.010000000Z|SW-01|PORT-01:PORT-02|INFO|允许|流过滤|RULE-001|命中|srcMac=00:1b:44:11:3a:b7,dstMac=00:1b:44:11:3a:b8,vlan=100,pcp=3,match=MAC+VLAN|流过滤命中
+2026-03-01T10:00:00.020000000Z|SW-01|PORT-01:PORT-03|INFO|允许|流过滤|RULE-002|命中|srcMac=00:1b:44:11:3a:b7,dstMac=00:1b:44:11:3a:b9,streamId=a0-00-00-00-00-00-00-01,match=StreamID|流过滤命中
+2026-03-01T10:00:00.030000000Z|SW-01|PORT-04|WARN|丢弃|流过滤|RULE-003|违规|srcMac=ff:ff:ff:ff:ff:ff,vlan=999,pcp=7,reason=无效VLAN/PCP|非法帧过滤，丢弃
+2026-03-01T10:00:00.040000000Z|SW-01|PORT-01|ERROR|丢弃|流过滤|RULE-004|违规|streamId=unknown,reason=未注册流接入|未知流拒绝接入
+2026-03-01T10:00:00.050000000Z|SW-01|PORT-02|WARN|丢弃|流过滤|RULE-005|违规|frameSize=1522,minSize=64,maxSize=1500,reason=超过最大帧长|帧长超限丢弃
+2026-03-01T10:00:01.000000000Z|SW-01|PORT-01|WARN|限流|警管|METER-001|Yellow|rate=120Mbps,CIR=100Mbps,tokens=50,CBS=10240|入方向速率120Mbps超CIR100Mbps，标记黄色
+2026-03-01T10:00:02.000000000Z|SW-01|PORT-01|ERROR|丢弃|警管|METER-001|Red|rate=250Mbps,CIR=100Mbps,EIR=200Mbps,tokens=0,passFrames=1000,exceedFrames=50|超CIR且超EIR，标记红色丢弃
+2026-03-01T10:00:03.000000000Z|SW-01|PORT-02|INFO|允许|警管|METER-002|Green|rate=50Mbps,CIR=100Mbps,tokens=800,passFrames=2000,exceedFrames=0|符合承诺速率，正常放行
+2026-03-01T10:00:04.000000000Z|SW-01|PORT-03|WARN|限流|警管|METER-003|Yellow|rate=180Mbps,CIR=100Mbps,EIR=100Mbps,algorithm=trTCM|双速率三色标记，超额黄色
+2026-03-01T10:00:05.000000000Z|SW-01|PORT-01|ERROR|丢弃|警管|METER-001|Red|burstSize=50000,CBS=10240,reason=突发流量超限|突发超限，令牌桶耗尽
+2026-03-01T10:00:06.000000000Z|SW-01|PORT-02|WARN|标记|流过滤|RULE-006|命中|srcMac=00:1b:44:11:3a:b7,oldPcp=5,newPcp=3,reason=重标记PCP|PCP降级标记 5→3
+2026-03-01T10:00:07.000000000Z|SW-01|PORT-04|ERROR|丢弃|流过滤|RULE-007|违规|frameCount=100,reason=帧格式错误|帧格式校验失败，批量丢弃

@@ -1,0 +1,9 @@
+2026-03-01T09:59:50.000000000Z|SW-01|INFO|LLDP_TOPO_CHANGE|LLDP发现新邻居设备|neighborId=ES-05,neighborPort=P1,tsnCapable=true,gptpCapable=true,qbvSupported=true|拓扑变化：发现端系统ES-05
+2026-03-01T09:59:51.000000000Z|SW-01|INFO|LLDP_TOPO_CHANGE|LLDP邻居TSN能力更新|neighborId=ES-05,neighborPort=P1,qbuSupported=false,qciSupported=false|ES-05不支持Qbu/Qci
+2026-03-01T09:59:55.000000000Z|SW-01|INFO|CONFIG_DEPLOY|机载控制器下发CBS配置|port=PORT-02,queue=Q3,idleSlope=500,newIdleSlope=600|CBS参数变更 500→600
+2026-03-01T09:59:56.000000000Z|SW-01|INFO|CONFIG_VERIFY|CBS配置验证通过|port=PORT-02,queue=Q3,idleSlope=600,actualRate=598|实际速率598与配置600偏差0.3%
+2026-03-01T09:59:58.000000000Z|SW-01|INFO|PSFP_UPDATE|配置流过滤规则RULE-001|streamId=a0-00-00-00-00-00-00-01,match=MAC+VLAN,action=ALLOW|新增流过滤规则
+2026-03-01T10:00:00.000000000Z|SW-01|INFO|CONFIG_DEPLOY|地面控制器下发GCL版本3|GCLVer=3,cycleTime=1000000,entries=4|GCL门控列表更新至版本3
+2026-03-01T10:00:10.000000000Z|SW-01|WARN|LLDP_TOPO_CHANGE|LLDP邻居离线|neighborId=ES-05,neighborPort=P1,lastSeen=10s|ES-05超时未收到LLDP报文，邻居离线
+2026-03-01T10:00:12.000000000Z|SW-01|INFO|LLDP_TOPO_CHANGE|LLDP邻居恢复在线|neighborId=ES-05,neighborPort=P1,tsnCapable=true|ES-05重新上线
+2026-03-01T10:00:15.000000000Z|SW-01|INFO|CONFIG_DEPLOY|地面控制器下发警管配置|meterId=METER-001,CIR=100Mbps,CBS=10240,algorithm=srTCM|新增警管实例METER-001

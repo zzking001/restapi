@@ -1,9 +1,0 @@
-interface=eth0
-ptp4l_state=SLAVE
-clock_id=000000.0000.000001
-master_offset_ns=250
-path_delay_ns=500
-sync_rate=2/s
-gm_identity=000000.0000.000000
-gm_priority1=128
-gm_clock_class=248
