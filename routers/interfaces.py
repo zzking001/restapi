@@ -19,6 +19,7 @@ DATA_DIR = os.path.join(
 )
 
 # ==================== 内存缓存 + 后台刷新 ====================
+#interfaces.json 每次读文件浪费 I/O，且网络接口状态可能变化（up/down），所以用缓存 + 定时刷新折中
 
 _refresh_interval: int = 10  # 秒
 _cache: list[InterfaceInfo] = []
