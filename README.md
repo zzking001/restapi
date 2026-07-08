@@ -1,296 +1,254 @@
-# TSN Device REST API
-zzking+ai
+# TSN Device REST API — FastAPI Edition
 
-[![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Flask-3.1-lightgrey.svg)](https://flask.palletsprojects.com/)
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688.svg)](https://fastapi.tiangolo.com/)
+[![Pydantic](https://img.shields.io/badge/Pydantic-2.0+-e92063.svg)](https://docs.pydantic.dev/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-一个基于 Flask 的 **TSN（时间敏感网络）设备管理 REST API**，提供设备 CRUD、TSN 流管理、系统监控、网络接口查询和 PTP 同步状态等 12 个接口，同时附带一个健壮的 Python 客户端。
-
-A Flask-based **TSN (Time-Sensitive Networking) Device Management REST API** with 12 endpoints covering device CRUD, stream management, system monitoring, network interface query, and PTP status — plus a robust Python client.
+基于 **FastAPI** 的 TSN（时间敏感网络）设备管理 REST API，采用模块化异步架构，提供设备 CRUD、TSN 流管理、系统监控、网络接口查询和 PTP 同步状态共 12+ 个接口，附带自动生成的 Swagger 文档。
 
 ---
 
-## 目录
+## 项目亮点
 
-- [功能概览](#功能概览)
-- [项目结构](#项目结构)
-- [快速开始](#快速开始)
-- [API 文档](#api-文档)
-- [客户端使用](#客户端使用)
-- [数据说明](#数据说明)
+与 Flask 单文件版本相比，本版本聚焦生产级特性：
 
----
-
-## 功能概览
-
-| 模块 | 路由 | 方法 | 说明 |
-|------|------|------|------|
-| **设备管理** | `/api/devices` | GET / POST | 列出所有设备 / 新增设备 |
-| | `/api/devices/<id>` | GET / PUT / DELETE | 查单台 / 全量更新 / 删除 |
-| **系统监控** | `/api/cpus` | GET | CPU 信息（核数、型号、频率） |
-| | `/api/memory` | GET | 内存信息（总量、空闲、缓存等） |
-| | `/api/uptime` | GET | 系统运行时间 |
-| **网络接口** | `/api/interfaces` | GET | 列出所有网卡 |
-| | `/api/interfaces/<name>` | GET | 指定网卡详情（IP、MAC、速率） |
-| | `/api/interfaces/<name>/tsn` | GET | 指定网卡的 TSN 能力 |
-| **TSN 流管理** | `/api/tsn/streams` | GET / POST | 列出所有流 / 新增流 |
-| | `/api/tsn/streams/<id>` | GET / PUT / DELETE | 查单条 / 更新 / 删除 |
-| **PTP 同步** | `/api/tsn/ptp/status` | GET | PTP 时钟同步状态 |
-
-### 客户端特性
-
-- ⏱️ **超时控制** — 默认 5 秒超时，防止无限期挂起
-- 🔄 **自动重试** — 传输层失败最多重试 3 次，指数退避
-- 📝 **完整日志** — 同时输出到控制台和 `client.log` 文件
-- 🌍 **环境配置** — 通过 `TSN_API_BASE` 环境变量切换服务器地址
-- ✅ **响应校验** — 自动检查 JSON 结构和必需字段
+- 🚀 **异步架构** — 全链路 `async/await`，`aiofiles` 异步文件 I/O
+- 🧱 **模块化路由** — 按职责拆分为 system / interfaces / devices / tsn 四个路由模块
+- ✅ **Pydantic 校验** — 请求/响应自动校验，类型安全，字段级文档
+- 🔄 **双更新模式** — `PUT`（全量替换）+ `PATCH`（部分更新），完整 RESTful 语义
+- 🔒 **并发安全** — `asyncio.Lock` 保护内存存储，多协程无竞态
+- 🔃 **后台缓存刷新** — 网卡数据定时自动刷新（默认 10 秒），减少磁盘 I/O
+- 📖 **自动文档** — 启动后访问 `/docs`（Swagger）和 `/redoc`（ReDoc）
+- 🪝 **生命周期管理** — `lifespan` 事件在启动时初始化缓存，关闭时清理资源
 
 ---
 
 ## 项目结构
 
 ```
-.
-├── server.py              # Flask REST API 服务（12 个路由）
-├── client.py              # Python 客户端（CRUD + 系统监控测试）
-├── requirements.txt       # Python 依赖
+restapi-fastapi/
+├── main.py                 # FastAPI 入口：创建 app、注册路由、配置 lifespan
+├── models.py               # Pydantic 数据模型（请求/响应结构定义）
+├── client.py               # Python 测试客户端（PUT + PATCH 全覆盖）
+├── requirements.txt        # Python 依赖
 ├── .gitignore
-└── data/                  # 模拟系统数据文件
-    ├── cpuinfo.txt        #   /proc/cpuinfo 格式
-    ├── meminfo.txt        #   /proc/meminfo 格式
-    ├── uptime.txt         #   /proc/uptime 格式
-    ├── interfaces.json    #   网卡列表 + TSN 能力
-    └── ptp_status.txt     #   PTP 同步状态
+├── data/                   # 模拟系统数据文件
+│   ├── cpuinfo.txt
+│   ├── meminfo.txt
+│   ├── uptime.txt
+│   ├── interfaces.json
+│   └── ptp_status.txt
+└── routers/                # 路由模块（按职责拆分）
+    ├── __init__.py
+    ├── system.py           # CPU / 内存 / 运行时间（只读）
+    ├── interfaces.py       # 网卡列表 / 详情 / TSN 能力（只读 + 缓存）
+    ├── devices.py          # 设备 CRUD（PUT + PATCH）
+    └── tsn.py              # TSN 流 CRUD + PTP 状态
 ```
 
 ---
 
 ## 快速开始
 
-### 1. 克隆并安装依赖
+### 1. 安装依赖
 
 ```bash
-git clone https://github.com/zzking001/restapi.git
-cd restapi
-
-# 创建虚拟环境（推荐）
+cd restapi-fastapi
 python -m venv venv
 source venv/bin/activate   # Linux/macOS
 # venv\Scripts\activate    # Windows
 
-# 安装依赖
 pip install -r requirements.txt
 ```
 
 ### 2. 启动服务
 
 ```bash
-python server.py
+# 开发模式（热重载）
+uvicorn main:app --reload --host 0.0.0.0 --port 5000
+
+# 或直接运行
+python main.py
 ```
 
-服务默认监听 `0.0.0.0:5000`，启动后访问 http://localhost:5000/api/devices 即可看到设备列表。
+服务启动后：
+- API 地址: http://localhost:5000
+- **Swagger 文档**: http://localhost:5000/docs
+- **ReDoc 文档**: http://localhost:5000/redoc
 
 ### 3. 运行客户端测试
 
 ```bash
-# 确保服务已启动，然后在另一个终端运行：
 python client.py
 ```
 
-客户端会依次测试所有 12 个接口，并打印请求/响应结果。
-
 ---
 
-## API 文档
-
-### 基础信息
-
-- Base URL: `http://localhost:5000/api`
-- Content-Type: `application/json`
-- 所有成功响应均返回 JSON 格式
+## API 概览
 
 ### 设备管理
 
-<details>
-<summary><b>GET /api/devices</b> — 获取设备列表</summary>
-
-```bash
-curl http://localhost:5000/api/devices
-```
-
-**响应示例：**
-```json
-[
-  {
-    "id": 1,
-    "name": "TSN-Talker-01",
-    "type": "talker",
-    "mac": "00:1b:44:11:3a:b7",
-    "stream_id": "a0-00-00-00-00-00-00-01",
-    "vlan": 100,
-    "pcp": 3,
-    "status": "online"
-  }
-]
-```
-</details>
-
-<details>
-<summary><b>POST /api/devices</b> — 新增设备</summary>
-
-```bash
-curl -X POST http://localhost:5000/api/devices \
-  -H "Content-Type: application/json" \
-  -d '{"name":"TSN-Talker-03","type":"talker","mac":"00:1b:44:11:3a:c3","vlan":300,"pcp":5,"status":"online"}'
-```
-
-> `name` 为必填字段，`id` 自动生成。
-</details>
-
-<details>
-<summary><b>GET /api/devices/:id</b> — 获取单个设备</summary>
-
-```bash
-curl http://localhost:5000/api/devices/1
-```
-</details>
-
-<details>
-<summary><b>PUT /api/devices/:id</b> — 更新设备</summary>
-
-```bash
-curl -X PUT http://localhost:5000/api/devices/1 \
-  -H "Content-Type: application/json" \
-  -d '{"status":"offline"}'
-```
-</details>
-
-<details>
-<summary><b>DELETE /api/devices/:id</b> — 删除设备</summary>
-
-```bash
-curl -X DELETE http://localhost:5000/api/devices/2
-# → 204 No Content
-```
-</details>
+| 方法 | 路由 | 说明 |
+|------|------|------|
+| `GET` | `/api/devices` | 列出所有设备 |
+| `POST` | `/api/devices` | 新增设备 |
+| `GET` | `/api/devices/{id}` | 查询单台设备 |
+| `PUT` | `/api/devices/{id}` | **全量替换**（所有字段必传） |
+| `PATCH` | `/api/devices/{id}` | **部分更新**（只传要改的字段） |
+| `DELETE` | `/api/devices/{id}` | 删除设备 |
 
 ### 系统监控
 
-| 接口 | 示例 | 返回内容 |
-|------|------|----------|
-| `GET /api/cpus` | `curl /api/cpus` | `{"count": 2, "cpus": [{...}, {...}]}` |
-| `GET /api/memory` | `curl /api/memory` | `{"MemTotal": ..., "MemFree": ..., ...}` |
-| `GET /api/uptime` | `curl /api/uptime` | `{"uptime_seconds": ..., "uptime_days": ...}` |
+| 方法 | 路由 | 说明 |
+|------|------|------|
+| `GET` | `/api/cpus` | CPU 信息（Pydantic 模型校验） |
+| `GET` | `/api/memory` | 内存信息 |
+| `GET` | `/api/uptime` | 系统运行时间 |
 
 ### 网络接口
 
-| 接口 | 示例 | 返回内容 |
-|------|------|----------|
-| `GET /api/interfaces` | `curl /api/interfaces` | 网卡列表（含 IP、MAC、速率、TSN 能力） |
-| `GET /api/interfaces/eth0` | `curl /api/interfaces/eth0` | eth0 详情 |
-| `GET /api/interfaces/eth0/tsn` | `curl /api/interfaces/eth0/tsn` | `{"interface":"eth0","tsn":{"enabled":true,...}}` |
+| 方法 | 路由 | 说明 |
+|------|------|------|
+| `GET` | `/api/interfaces` | 列出所有网卡（缓存读取） |
+| `GET` | `/api/interfaces/{name}` | 指定网卡详情 |
+| `GET` | `/api/interfaces/{name}/tsn` | 指定网卡 TSN 能力 |
 
 ### TSN 流管理
 
 | 方法 | 路由 | 说明 |
 |------|------|------|
-| GET | `/api/tsn/streams` | 列出所有流 |
-| POST | `/api/tsn/streams` | 新增流（需 `stream_id` 字段） |
-| GET | `/api/tsn/streams/:id` | 查单条流 |
-| PUT | `/api/tsn/streams/:id` | 更新流 |
-| DELETE | `/api/tsn/streams/:id` | 删除流 |
+| `GET` | `/api/tsn/streams` | 列出所有流 |
+| `POST` | `/api/tsn/streams` | 新增流 |
+| `GET` | `/api/tsn/streams/{id}` | 查询单条流 |
+| `PUT` | `/api/tsn/streams/{id}` | **全量替换**流 |
+| `PATCH` | `/api/tsn/streams/{id}` | **部分更新**流 |
+| `DELETE` | `/api/tsn/streams/{id}` | 删除流 |
 
-### PTP 同步状态
+### PTP 同步
+
+| 方法 | 路由 | 说明 |
+|------|------|------|
+| `GET` | `/api/tsn/ptp/status` | PTP 时钟同步状态 |
+
+---
+
+## cURL 示例
 
 ```bash
+# === 设备管理 ===
+# 获取设备列表
+curl http://localhost:5000/api/devices
+
+# 新增设备（Pydantic 自动校验）
+curl -X POST http://localhost:5000/api/devices \
+  -H "Content-Type: application/json" \
+  -d '{"name":"TSN-Talker-03","type":"talker","mac":"00:1b:44:11:3a:c3","vlan":300,"pcp":5,"status":"online"}'
+
+# 部分更新 — 只改状态（PATCH）
+curl -X PATCH http://localhost:5000/api/devices/1 \
+  -H "Content-Type: application/json" \
+  -d '{"status":"offline"}'
+
+# 全量替换 — 所有字段必传（PUT）
+curl -X PUT http://localhost:5000/api/devices/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name":"TSN-Replaced","type":"bridge","mac":"ff:ff:ff:ff:ff:ff","stream_id":"-","vlan":1,"pcp":0,"status":"offline"}'
+
+# 删除设备
+curl -X DELETE http://localhost:5000/api/devices/2
+
+# === 系统监控 ===
+curl http://localhost:5000/api/cpus
+curl http://localhost:5000/api/memory
+
+# === PTP 状态 ===
 curl http://localhost:5000/api/tsn/ptp/status
 ```
 
-```json
-{
-  "interface": "eth0",
-  "ptp4l_state": "SLAVE",
-  "clock_id": "000000.0000.000001",
-  "master_offset_ns": "250",
-  "path_delay_ns": "500",
-  "sync_rate": "2/s"
-}
-```
-
 ---
 
-## 客户端使用
+## PUT vs PATCH
 
-`client.py` 既是集成测试脚本，也是客户端使用范例：
+本版本是 **首个支持 PATCH 的版本**，与 Flask 版本的关键区别：
 
-```python
-from client import req, safe_json, validate
-
-# 获取设备列表
-r = req("GET", "/devices")
-if r and r.status_code == 200:
-    devices = safe_json(r)
-    print(f"共 {len(devices)} 台设备")
-
-# 新增一个 Talker
-r = req("POST", "/devices", json={
-    "name": "TSN-Talker-New",
-    "type": "talker",
-    "mac": "00:1b:44:11:3a:ff",
-    "vlan": 400,
-    "pcp": 6,
-    "status": "online"
-})
-```
-
-### 环境变量
-
-| 变量 | 默认值 | 说明 |
-|------|--------|------|
-| `TSN_API_BASE` | `http://127.0.0.1:5000/api` | API 服务器地址 |
+| | PUT | PATCH |
+|------|-----|--------|
+| 语义 | 全量替换 | 部分更新 |
+| 请求体 | 所有字段必传 | 只传要改的字段 |
+| 未传字段 | 被重置为默认值/空 | 保持原值不变 |
+| 适用场景 | 完整覆写一条记录 | 快速切换状态、修正单个属性 |
 
 ```bash
-# 指向远程服务器
-export TSN_API_BASE=http://192.168.1.100:5000/api
-python client.py
+# Flask 版本只有 PUT，改状态却要传全部字段：
+curl -X PUT /api/devices/1 -d '{"name":"...","type":"...","mac":"...",...}'
+
+# FastAPI 版本用 PATCH，一行搞定：
+curl -X PATCH /api/devices/1 -d '{"status":"offline"}'
 ```
 
 ---
 
-## 数据说明
+## 架构设计
 
-`data/` 目录存放模拟的系统文件，用于开发和测试：
+### 路由模块化
 
-| 文件 | 格式 | 模拟来源 | 用途 |
-|------|------|----------|------|
-| `cpuinfo.txt` | `/proc/cpuinfo` | Linux procfs | CPU 型号、核数、频率 |
-| `meminfo.txt` | `/proc/meminfo` | Linux procfs | 内存总量/空闲/缓存 |
-| `uptime.txt` | `/proc/uptime` | Linux procfs | 系统运行秒数 |
-| `interfaces.json` | JSON 数组 | 自定义 | 网卡配置 + TSN 能力 |
-| `ptp_status.txt` | `key=value` | `pmc` 输出 | PTP 时钟同步状态 |
+每个 `routers/*.py` 都是独立的路由模块，通过 `APIRouter` 注册到主应用：
 
-> 💡 **设计思路**：数据文件模拟了 Linux `/proc` 和网卡信息的格式，以后可无缝替换为读取真实系统文件（如 `/proc/cpuinfo`）或通过 `psutil` 库获取实时数据。
+```python
+# main.py
+app.include_router(system.router)      # /api/cpus, /api/memory, /api/uptime
+app.include_router(interfaces.router)  # /api/interfaces, /api/interfaces/{name}/...
+app.include_router(devices.router)     # /api/devices, /api/devices/{id}
+app.include_router(tsn.router)         # /api/tsn/streams, /api/tsn/ptp/status
+```
+
+新增功能只需写一个 router 文件并 `include_router`，无需改动已有代码。
+
+### 并发安全
+
+所有读写共享内存数据的路由都使用 `asyncio.Lock` 保护：
+
+```python
+async with _lock:
+    # 安全读写 _devices / _streams
+```
+
+### 后台缓存刷新
+
+网卡数据不是每次请求都读磁盘，而是：
+1. 启动时加载到内存缓存
+2. 后台每 10 秒自动刷新
+3. 所有接口从缓存读取，I/O 开销几乎为零
 
 ---
 
 ## 技术栈
 
-- **Web 框架**: Flask 3.1
-- **HTTP 客户端**: Requests 2.34
-- **生产部署**: Gunicorn 26（可选）
-- **Python**: 3.8+
+| 组件 | 版本 | 用途 |
+|------|------|------|
+| **FastAPI** | ≥0.115 | 异步 Web 框架 |
+| **Uvicorn** | ≥0.30 | ASGI 服务器 |
+| **Pydantic** | ≥2.0 | 数据校验与序列化 |
+| **aiofiles** | ≥24.0 | 异步文件 I/O |
+| **Gunicorn** | ≥23.0 | 生产部署（可选） |
+| **Requests** | ≥2.32 | HTTP 客户端测试 |
+| **Python** | 3.10+ | 运行环境 |
 
 ---
 
-## 路线图
+## 与 Flask 版本的对比
 
-- [ ] 数据持久化（SQLite / PostgreSQL）
-- [ ] 认证与授权（JWT）
-- [ ] WebSocket 实时推送设备状态
-- [ ] Docker 容器化部署
-- [ ] OpenAPI / Swagger 文档自动生成
-- [ ] 替换模拟数据为真实系统读取（psutil）
+| 维度 | Flask 版（restapi-main） | FastAPI 版（本仓库） |
+|------|--------------------------|---------------------------|
+| 架构 | 单文件 `server.py` | 模块化 `routers/` + `models.py` |
+| 更新模式 | 仅 PUT | PUT + PATCH 双模式 |
+| I/O 模型 | 同步 | 异步（async/await） |
+| 数据校验 | 手动校验 | Pydantic 自动校验 |
+| API 文档 | 无 | Swagger + ReDoc 自动生成 |
+| 并发保护 | 无 | asyncio.Lock |
+| 网卡缓存 | 每次读文件 | 内存缓存 + 定时刷新 |
+| 学习门槛 | 低，适合快速原型 | 中，适合生产部署 |
 
 ---
 
