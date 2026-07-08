@@ -14,7 +14,7 @@ from models import (
     HardwareLogEntry, HardwareLogResponse,
 )
 
-router = APIRouter(prefix="/api/logs", tags=["logs"])
+router = APIRouter(prefix="/api/logs", tags=["日志"])
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
