@@ -1,4 +1,5 @@
 """Pydantic 数据模型 —— 统一管理所有请求/响应结构。"""
+#用于定义传输数据的数据结构，包括字段类型、字段名称、字段描述、字段默认值等
 
 from typing import Optional
 from pydantic import BaseModel, Field

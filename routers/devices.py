@@ -9,8 +9,11 @@ from fastapi.responses import Response
 from models import (
     DeviceCreate, DeviceUpdate, DevicePatch, DeviceResponse,
 )
-
+#给这个文件创建一个专属的日志记录器
 logger = logging.getLogger("devices")
+#创建路由对象，用于注册路由和分组
+#prefix="/api"，表示路由前缀，这个路由器下所有端点的 URL 都自动加 /api
+#tags=["设备管理"]，/docs 页面上，这组端点归在"设备管理"标题下
 router = APIRouter(prefix="/api", tags=["设备管理"])
 
 # ==================== 种子数据 + 并发锁 ====================
@@ -34,7 +37,7 @@ _devices: list[dict] = [
 ]
 _lock = asyncio.Lock()
 
-
+# ==================== 辅助函数 ====================
 def _next_id(items: list[dict]) -> int:
     return max(d["id"] for d in items) + 1 if items else 1
 

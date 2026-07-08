@@ -1,5 +1,5 @@
 """TSN 流 CRUD + PTP 同步状态路由。"""
-
+#PTP 状态就是网络硬件的时钟同步快照，和 CPU 型号、内存大小一样的"系统事实"
 import asyncio
 import logging
 import os
