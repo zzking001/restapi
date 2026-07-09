@@ -63,21 +63,6 @@ class ClockRole(str, Enum):
     P2P_MASTER = "P2P Master"
     P2P_SLAVE = "P2P Slave"
 
-#整合表格中要求+时间同步状态日志的记录策略中提及的“事件触发后立即记录的日志”
-class TimeSyncEventType(str, Enum):
-    GM_CHANGE = "GM_CHANGE"
-    SYNC_LOST = "SYNC_LOST"
-    SYNC_RECOVERED = "SYNC_RECOVERED"
-    OFFSET_ALARM = "OFFSET_ALARM"
-    FREQ_ALARM = "FREQ_ALARM"
-    PORT_STATE_CHANGE = "PORT_STATE_CHANGE"
-    PKT_LOSS = "PKT_LOSS"
-    PKT_ERROR = "PKT_ERROR"
-    PORT_ENABLE = "PORT_ENABLE"
-    PORT_DISABLE = "PORT_DISABLE"
-    CONFIG_CHANGE = "CONFIG_CHANGE"
-    PERIODIC_STATS = "PERIODIC_STATS"   # 周期性统计
-
 #[时间戳] [设备ID] [端口号] [日志级别] [gPTP域] [时钟角色] [事件类型] [关键字段键值对] [描述信息]
 class TimeSyncLogEntry(BaseModel):
     """时间同步状态日志 —— 单条记录。"""
@@ -87,12 +72,13 @@ class TimeSyncLogEntry(BaseModel):
     level: LogLevel = Field(..., description="日志级别")
     gptp_domain: int = Field(0, description="802.1AS 域编号")
     clock_role: ClockRole = Field(..., description="时钟角色")
-    event_type: TimeSyncEventType = Field(..., description="事件类型")
+    event_type: str = Field(..., description="事件类型，如 GM_CHANGE、SYNC_LOST、OFFSET_ALARM")
     kv_pairs: dict[str, str] = Field(
         default_factory=dict,
-        description="关键字段键值对（offsetFromMaster, meanPathDelay, freqOffset, "
-                    "gmIdentity, gmPriority, syncInterval, portState, syncLostCount, "
-                    "residenceTime 等）"
+        description="关键字段键值对：offset（主从时间偏移ns）、delay（平均链路延迟ns）、"
+                    "freq（频率偏差ppb）、gmId（上级GM时钟ID）、gmPriority（GM优先级）、"
+                    "syncInt（Sync报文周期s）、State（端口gPTP状态）、"
+                    "syncLost（连续丢失计数）、residence（交换机驻留时间ns）"
     )
     description: str = Field("", description="描述信息")
 

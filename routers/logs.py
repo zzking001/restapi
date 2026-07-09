@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, Query
 from models import (
-    LogLevel, ClockRole, TimeSyncEventType,
+    LogLevel, ClockRole,
     ScheduleType, FilterOperation, FilterResourceType, FilterStatus,
     ConfigEventType, HardwareMetricType,
     TimeSyncLogEntry, TimeSyncLogResponse,
@@ -59,7 +59,7 @@ def load_timesync_logs() -> list[TimeSyncLogEntry]:
                 level=LogLevel(parts[3]),
                 gptp_domain=int(parts[4]),
                 clock_role=ClockRole(parts[5]),
-                event_type=TimeSyncEventType(parts[6]),
+                event_type=parts[6],
                 kv_pairs=_parse_kv(parts[7]),
                 description=parts[8],
             ))
@@ -176,7 +176,7 @@ def get_timesync_logs(
     level: Optional[LogLevel] = Query(None, description="日志级别"),
     device_id: Optional[str] = Query(None, description="设备标识"),
     port: Optional[str] = Query(None, description="端口号"),
-    event_type: Optional[TimeSyncEventType] = Query(None, description="事件类型"),
+    event_type: Optional[str] = Query(None, description="事件类型，如 GM_CHANGE、SYNC_LOST、OFFSET_ALARM"),
     clock_role: Optional[ClockRole] = Query(None, description="时钟角色"),
 ):
     logs = load_timesync_logs()
