@@ -5,8 +5,6 @@ from typing import Optional
 from fastapi import APIRouter, Query
 from models import (
     LogLevel, ClockRole,
-    ScheduleType, FilterOperation, FilterResourceType, FilterStatus,
-    ConfigEventType, HardwareMetricType,
     TimeSyncLogEntry, TimeSyncLogResponse,
     SchedulingLogEntry, SchedulingLogResponse,
     FilteringLogEntry, FilteringLogResponse,
@@ -81,7 +79,7 @@ def load_scheduling_logs() -> list[SchedulingLogEntry]:
                 device_id=parts[1],
                 port=parts[2],
                 level=LogLevel(parts[3]),
-                schedule_type=ScheduleType(parts[4]),
+                schedule_type=parts[4],
                 queue=parts[5],
                 stream_id=parts[6],
                 event=parts[7],
@@ -105,10 +103,10 @@ def load_filtering_logs() -> list[FilteringLogEntry]:
                 device_id=parts[1],
                 port=parts[2],
                 level=LogLevel(parts[3]),
-                operation=FilterOperation(parts[4]),
-                resource_type=FilterResourceType(parts[5]),
+                operation=parts[4],
+                resource_type=parts[5],
                 config_id=parts[6],
-                status=FilterStatus(parts[7]),
+                status=parts[7],
                 kv_pairs=_parse_kv(parts[8]),
             ))
         except (ValueError, IndexError):
@@ -128,7 +126,7 @@ def load_config_logs() -> list[ConfigLogEntry]:
                 timestamp=parts[0],
                 device_id=parts[1],
                 level=LogLevel(parts[2]),
-                event_type=ConfigEventType(parts[3]),
+                event_type=parts[3],
                 description=parts[4],
                 kv_pairs=_parse_kv(parts[5]),
             ))
@@ -149,7 +147,7 @@ def load_hardware_logs() -> list[HardwareLogEntry]:
                 timestamp=parts[0],
                 device_id=parts[1],
                 level=LogLevel(parts[2]),
-                metric_type=HardwareMetricType(parts[3]),
+                metric_type=parts[3],
                 kv_pairs=_parse_kv(parts[4]),
             ))
         except (ValueError, IndexError):
@@ -202,7 +200,7 @@ def get_scheduling_logs(
     level: Optional[LogLevel] = Query(None, description="日志级别"),
     device_id: Optional[str] = Query(None, description="设备标识"),
     port: Optional[str] = Query(None, description="端口号"),
-    schedule_type: Optional[ScheduleType] = Query(None, description="调度/整形类型"),
+    schedule_type: Optional[str] = Query(None, description="调度/整形类型"),
     queue: Optional[str] = Query(None, description="队列标识"),
     stream_id: Optional[str] = Query(None, description="流标识"),
 ):
@@ -231,9 +229,9 @@ def get_filtering_logs(
     level: Optional[LogLevel] = Query(None, description="日志级别"),
     device_id: Optional[str] = Query(None, description="设备标识"),
     port: Optional[str] = Query(None, description="端口（入端口->出端口）"),
-    operation: Optional[FilterOperation] = Query(None, description="动作"),
-    resource_type: Optional[FilterResourceType] = Query(None, description="资源类型"),
-    status: Optional[FilterStatus] = Query(None, description="状态/判定结果"),
+    operation: Optional[str] = Query(None, description="动作"),
+    resource_type: Optional[str] = Query(None, description="资源类型"),
+    status: Optional[str] = Query(None, description="状态/判定结果"),
 ):
     logs = load_filtering_logs()
     if level is not None:
@@ -259,7 +257,7 @@ def get_config_logs(
     page_size: int = Query(20, ge=1, le=200, description="每页条数"),
     level: Optional[LogLevel] = Query(None, description="日志级别"),
     device_id: Optional[str] = Query(None, description="设备标识"),
-    event_type: Optional[ConfigEventType] = Query(None, description="事件类型"),
+    event_type: Optional[str] = Query(None, description="事件类型"),
 ):
     logs = load_config_logs()
     if level is not None:
@@ -279,7 +277,7 @@ def get_hardware_logs(
     page_size: int = Query(20, ge=1, le=200, description="每页条数"),
     level: Optional[LogLevel] = Query(None, description="日志级别"),
     device_id: Optional[str] = Query(None, description="设备标识"),
-    metric_type: Optional[HardwareMetricType] = Query(None, description="指标类型"),
+    metric_type: Optional[str] = Query(None, description="指标类型"),
 ):
     logs = load_hardware_logs()
     if level is not None:

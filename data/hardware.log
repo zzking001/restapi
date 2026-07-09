@@ -1,11 +1,7 @@
 2026-07-08T08:00:00.000000000Z|SW-01|INFO|cpu|cpu_percent=12.5,cpu0_percent=15,cpu1_percent=10,processCount=142,contextSwitches=5000
 2026-07-08T08:00:00.000000000Z|SW-01|INFO|memory|mem_total=8589934592,mem_used=2147483648,mem_percent=25.0,swap_total=4294967296,swap_used=0
 2026-07-08T08:00:00.000000000Z|SW-01|INFO|buffer|port=PORT-01,queue=Q0,buffer_used=1500,buffer_max=16384,buffer_percent=9.2
-2026-07-08T08:00:00.000000000Z|SW-01|INFO|thermal|sensor=core0,temperature=52,unit=C,fan_speed=3500,alarm_threshold=85
 2026-07-08T08:00:30.000000000Z|SW-02|INFO|cpu|cpu_percent=28.3,cpu0_percent=35,cpu1_percent=22,cpu2_percent=28,processCount=168
 2026-07-08T08:00:30.000000000Z|SW-02|INFO|memory|mem_total=8589934592,mem_used=3865472000,mem_percent=45.0,swap_total=4294967296,swap_used=1073741824
 2026-07-08T08:00:30.000000000Z|SW-02|WARN|buffer|port=PORT-03,queue=Q2,buffer_used=14000,buffer_max=16384,buffer_percent=85.5,alarm_threshold=80
-2026-07-08T08:00:30.000000000Z|SW-02|INFO|thermal|sensor=core0,temperature=68,unit=C,fan_speed=5200,alarm_threshold=85
-2026-07-08T08:00:30.000000000Z|SW-02|INFO|power|rail=12V,voltage=12.05,current=2.5,power_watt=30.125,status=NORMAL
 2026-07-08T08:01:00.000000000Z|SW-01|INFO|cpu|cpu_percent=11.8,cpu0_percent=14,cpu1_percent=9,processCount=140,contextSwitches=5200
-2026-07-08T08:01:00.000000000Z|SW-01|WARN|thermal|sensor=core1,temperature=78,unit=C,fan_speed=4800,alarm_threshold=85,warning_near_threshold=true
