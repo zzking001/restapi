@@ -179,3 +179,95 @@ class HardwareLogResponse(BaseModel):
     page: int
     page_size: int
     logs: list[HardwareLogEntry]
+
+
+# ==================== 网管上报数据模型（报告004 第4.2节）====================
+
+# ---------- NETCONF 通知模型（报告004 第4.2.1节）----------
+
+class NetconfEventType(str, Enum):
+    """NETCONF 通知事件类型 —— 参照报告"TSN核心告警以及事件分类与字段"表。"""
+    GPTP_OFFSET_OVER_LIMIT = "GPTP_OFFSET_OVER_LIMIT"
+    GM_CHANGE = "GM_CHANGE"
+    QBV_JITTER_OVER_LIMIT = "QBV_JITTER_OVER_LIMIT"
+    GCL_UPDATE = "GCL_UPDATE"
+    STREAM_DROP_OVER_LIMIT = "STREAM_DROP_OVER_LIMIT"
+    POLICER_BANDWIDTH_OVER_LIMIT = "POLICER_BANDWIDTH_OVER_LIMIT"
+    FLOW_RESERVATION_FAILED = "FLOW_RESERVATION_FAILED"
+    PORT_LINK_DOWN = "PORT_LINK_DOWN"
+    PERIODIC_STATS = "PERIODIC_STATS"
+
+
+class NetconfSeverity(str, Enum):
+    """NETCONF 通知严重级别。"""
+    ERROR = "ERROR"
+    WARN = "WARN"
+    INFO = "INFO"
+
+
+class NetconfNotificationEntry(BaseModel):
+    """NETCONF 通知 —— 单条记录。
+
+    参照报告004 第4.2.1节 XML 示例和字段表。
+    事件类型专属字段（如 gptp_offset/threshold/gm_identity 等）折叠进 kv_pairs。
+    """
+    event_time: str = Field(..., description="事件发生时间（ISO 8601）")
+    device_id: str = Field(..., description="设备唯一标识")
+    port_id: str = Field(..., description="端口标识")
+    event_type: NetconfEventType = Field(..., description="事件类型")
+    severity: NetconfSeverity = Field(..., description="严重级别")
+    kv_pairs: dict[str, str] = Field(
+        default_factory=dict,
+        description="事件类型专属字段键值对。"
+                    "时间同步：gptp_offset（偏移ns）、threshold（阈值ns）、gm_identity（GM时钟ID）；"
+                    "调度：jitter（抖动ns）、window_id（门控窗口ID）、gcl_state（门控状态）；"
+                    "流监控：stream_id（流ID）、drop_rate（丢包率%）、cir（承诺信息速率）、eir（超额信息速率）；"
+                    "周期性：各种统计指标键值对"
+    )
+
+
+class NetconfNotificationResponse(BaseModel):
+    """NETCONF 通知查询响应。"""
+    total: int
+    page: int
+    page_size: int
+    notifications: list[NetconfNotificationEntry]
+
+
+# ---------- SNMP Trap 模型（报告004 第4.2.2节 TSN-MIB）----------
+
+class SnmpTrapType(str, Enum):
+    """SNMP Trap 类型 —— 参照报告 TSN-MIB 中三个 NOTIFICATION-TYPE 定义。"""
+    GPTP_OFFSET_OVER_LIMIT = "GPTP_OFFSET_OVER_LIMIT"
+    QBV_JITTER_OVER_LIMIT = "QBV_JITTER_OVER_LIMIT"
+    PERIODIC_STATUS_REPORT = "PERIODIC_STATUS_REPORT"
+
+
+class SnmpTrapEntry(BaseModel):
+    """SNMP Trap —— 单条记录。
+
+    参照报告004 第4.2.2节 TSN-MIB 定义。
+    OID 键值对折叠进 oid_values 字典。
+    """
+    timestamp: str = Field(..., description="Trap 发出时间（ISO 8601）")
+    device_id: str = Field(..., description="设备唯一标识")
+    trap_oid: str = Field(..., description="Trap OID，如 1.3.6.1.4.1.x")
+    trap_type: SnmpTrapType = Field(..., description="Trap 类型")
+    oid_values: dict[str, str] = Field(
+        default_factory=dict,
+        description="OID 键值对。"
+                    "gPTP 偏移类：tsnGptpOffset（偏移ns）、tsnGptpGmId（GM时钟ID）、"
+                    "tsnGptpOffsetThreshold（偏移阈值ns）；"
+                    "Qbv 抖动类：tsnQbvJitter（抖动ns）、tsnQbvWindowId（门控窗口ID）、"
+                    "tsnQbvJitterThreshold（抖动阈值ns）；"
+                    "周期性状态：tsnDevicePortStatus（端口状态）、tsnClockRole（时钟角色）、"
+                    "ifIndex（接口索引）等"
+    )
+
+
+class SnmpTrapResponse(BaseModel):
+    """SNMP Trap 查询响应。"""
+    total: int
+    page: int
+    page_size: int
+    traps: list[SnmpTrapEntry]

@@ -8,6 +8,8 @@ from requests.exceptions import ConnectionError, Timeout
 #.get(先去系统环境变量里找的值，默认值)
 #配置过程类似于在终端中输入：export TSN_API_BASE="http://127.0.0.1:5000/api" 
 BASE = os.environ.get("TSN_API_BASE", "http://127.0.0.1:5000/api")
+BASE_LOGS = os.environ.get("TSN_API_BASE_LOGS", "http://127.0.0.1:5000/api")
+BASE_MGMT = os.environ.get("TSN_API_BASE_MGMT", "http://127.0.0.1:5001/api")
 TIMEOUT = 5  # 秒：超过这个时间没响应就放弃，不让脚本无限期挂着
 MAX_RETRIES = 3  # 失败最多重试几次
 
@@ -23,13 +25,16 @@ logging.basicConfig(
 
 log = logging.getLogger("client")
 #对应上面定义格式中的message
-log.info(f"启动：BASE={BASE}，TIMEOUT={TIMEOUT}s，MAX_RETRIES={MAX_RETRIES}")
+log.info(f"启动：BASE={BASE}，LOGS={BASE_LOGS}，MGMT={BASE_MGMT}，TIMEOUT={TIMEOUT}s")
 
 # ========== 工具函数层 ==========
-def req(method, path, **kwargs):
-    """统一封装：带超时 + 传输层错误处理 + 重试退避 + 日志。"""
-    #log封装日志
-    url = f"{BASE}{path}"
+def req(method, path, base=None, **kwargs):
+    """统一封装：带超时 + 传输层错误处理 + 重试退避 + 日志。
+    
+    参数 base 可选，用于切换日志轨 / 网管轨的 API 地址。
+    """
+    actual_base = base if base else BASE
+    url = f"{actual_base}{path}"
     for attempt in range(1, MAX_RETRIES + 1):
         start = time.time()
         try:#正常请求+计算耗时
@@ -252,3 +257,98 @@ elif r.status_code == 200:
     data = safe_json(r)
     if data and check_logs(data, "硬件-空页"):
         print(r.status_code, f"-> total={data['total']}, 返回 {len(data['logs'])} 条（预期 0）")
+
+
+# ==================== 网管数据查询测试（机载网络控制器） ====================
+
+def check_mgmt(data, list_key, name=""):
+    """校验网管分页响应结构：total、page、page_size、列表数组。"""
+    if not validate(data, ["total", "page", "page_size", list_key], name):
+        return False
+    items = data.get(list_key, [])
+    if not isinstance(items, list):
+        log.warning(f"{name}：{list_key} 不是数组")
+        return False
+    return True
+
+
+# ======== 6. NETCONF 通知 ========
+print("\n=== GET /mgmt/netconf（NETCONF 通知 - 全部）===")
+r = req("GET", "/mgmt/netconf", base=BASE_MGMT)
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "notifications", "NETCONF-全部"):
+        print(r.status_code, f"-> total={data['total']}, 返回 {len(data['notifications'])} 条")
+
+# 按严重级别过滤
+print("=== GET /mgmt/netconf?severity=ERROR ===")
+r = req("GET", "/mgmt/netconf", base=BASE_MGMT, params={"severity": "ERROR"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "notifications", "NETCONF-ERROR"):
+        print(r.status_code, f"-> total={data['total']} 条 ERROR 通知")
+
+# 按事件类型过滤
+print("=== GET /mgmt/netconf?event_type=GM_CHANGE ===")
+r = req("GET", "/mgmt/netconf", base=BASE_MGMT, params={"event_type": "GM_CHANGE"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "notifications", "NETCONF-GM_CHANGE"):
+        print(r.status_code, f"-> total={data['total']} 条 GM_CHANGE 通知")
+
+# 按设备过滤
+print("=== GET /mgmt/netconf?device_id=SW-01 ===")
+r = req("GET", "/mgmt/netconf", base=BASE_MGMT, params={"device_id": "SW-01"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "notifications", "NETCONF-SW-01"):
+        print(r.status_code, f"-> total={data['total']} 条 SW-01 通知")
+
+
+# ======== 7. SNMP Trap ========
+print("\n=== GET /mgmt/snmp（SNMP Trap - 全部）===")
+r = req("GET", "/mgmt/snmp", base=BASE_MGMT)
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "traps", "SNMP-全部"):
+        print(r.status_code, f"-> total={data['total']}, 返回 {len(data['traps'])} 条")
+
+# 按 Trap 类型过滤
+print("=== GET /mgmt/snmp?trap_type=GPTP_OFFSET_OVER_LIMIT ===")
+r = req("GET", "/mgmt/snmp", base=BASE_MGMT, params={"trap_type": "GPTP_OFFSET_OVER_LIMIT"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "traps", "SNMP-gPTP"):
+        print(r.status_code, f"-> total={data['total']} 条 gPTP 偏移 Trap")
+
+# 按设备过滤
+print("=== GET /mgmt/snmp?device_id=SW-01 ===")
+r = req("GET", "/mgmt/snmp", base=BASE_MGMT, params={"device_id": "SW-01"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "traps", "SNMP-SW-01"):
+        print(r.status_code, f"-> total={data['total']} 条 SW-01 Trap")
+
+# 边界：空页
+print("=== GET /mgmt/snmp?page=99（空页）===")
+r = req("GET", "/mgmt/snmp", base=BASE_MGMT, params={"page": 99})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "traps", "SNMP-空页"):
+        print(r.status_code, f"-> total={data['total']}, 返回 {len(data['traps'])} 条（预期 0）")
