@@ -5,40 +5,45 @@ import time
 import requests
 from requests.exceptions import ConnectionError, Timeout
 
+#.get(先去系统环境变量里找的值，默认值)
+#配置过程类似于在终端中输入：export TSN_API_BASE="http://127.0.0.1:5000/api" 
 BASE = os.environ.get("TSN_API_BASE", "http://127.0.0.1:5000/api")
 TIMEOUT = 5  # 秒：超过这个时间没响应就放弃，不让脚本无限期挂着
-MAX_RETRIES = 3  # 传输层失败最多重试几次
+MAX_RETRIES = 3  # 失败最多重试几次
 
 # 日志配置：同时输出到控制台和文件 client.log
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
+    level=logging.INFO,#只显示info以上的日志，debug级别的日志不会显示
+    format="%(asctime)s [%(levelname)s] %(message)s",#定义日志输出格式
+    handlers=[#指明日志输出的方式，StreamHandler表示输出到控制台，FileHandler表示输出到文件
         logging.StreamHandler(),
         logging.FileHandler("client.log", encoding="utf-8"),
     ],
 )
+
 log = logging.getLogger("client")
+#对应上面定义格式中的message
 log.info(f"启动：BASE={BASE}，TIMEOUT={TIMEOUT}s，MAX_RETRIES={MAX_RETRIES}")
 
-
+# ========== 工具函数层 ==========
 def req(method, path, **kwargs):
     """统一封装：带超时 + 传输层错误处理 + 重试退避 + 日志。"""
+    #log封装日志
     url = f"{BASE}{path}"
     for attempt in range(1, MAX_RETRIES + 1):
         start = time.time()
-        try:
+        try:#正常请求+计算耗时
             r = requests.request(method, url, timeout=TIMEOUT, **kwargs)
             elapsed = time.time() - start
             log.info(f"{method} {url} -> {r.status_code} ({elapsed:.3f}s)")
             return r
-        except Timeout:
+        except Timeout:#请求超时
             elapsed = time.time() - start
             log.warning(f"{method} {url} -> 超时 ({elapsed:.3f}s)")
-        except ConnectionError:
+        except ConnectionError:#连接错误
             elapsed = time.time() - start
             log.warning(f"{method} {url} -> 连接失败 ({elapsed:.3f}s)")
-        if attempt < MAX_RETRIES:
+        if attempt < MAX_RETRIES:#如果还没到最大重试次数，计算退避时间并等待
             wait = 2 ** (attempt - 1)
             log.info(f"重试 {attempt}/{MAX_RETRIES}，{wait}s 后重试")
             time.sleep(wait)
@@ -74,11 +79,11 @@ def validate(data, required_fields, context=""):
 # === GET：网卡列表 ===
 print("\n=== GET /interfaces（网卡列表）===")
 r = req("GET", "/interfaces")
-if r is None:
+if r is None:#请求失败，返回 None
     pass
 elif r.status_code == 200:
-    data = safe_json(r)
-    if isinstance(data, list):
+    data = safe_json(r)#转换数据类型
+    if isinstance(data, list):#检查数据结构
         print(r.status_code, "->", len(data), "个网卡")
     else:
         print(f"  [结构错误] 期望 list，实际 {type(data).__name__}")

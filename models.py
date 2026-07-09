@@ -53,7 +53,9 @@ class LogLevel(str, Enum):
 
 
 # ---------- 1. 时间同步状态日志（报告004 第4.1.1节）----------
+#[时间戳] [设备ID] [端口号] [日志级别] [gPTP域] [时钟角色] [事件类型] [关键字段键值对] [描述信息]
 
+#时钟角色
 class ClockRole(str, Enum):
     GM = "GM"
     BC = "BC"
@@ -61,7 +63,7 @@ class ClockRole(str, Enum):
     P2P_MASTER = "P2P Master"
     P2P_SLAVE = "P2P Slave"
 
-
+#整合表格中要求+时间同步状态日志的记录策略中提及的“事件触发后立即记录的日志”
 class TimeSyncEventType(str, Enum):
     GM_CHANGE = "GM_CHANGE"
     SYNC_LOST = "SYNC_LOST"
@@ -76,7 +78,7 @@ class TimeSyncEventType(str, Enum):
     CONFIG_CHANGE = "CONFIG_CHANGE"
     PERIODIC_STATS = "PERIODIC_STATS"   # 周期性统计
 
-
+#[时间戳] [设备ID] [端口号] [日志级别] [gPTP域] [时钟角色] [事件类型] [关键字段键值对] [描述信息]
 class TimeSyncLogEntry(BaseModel):
     """时间同步状态日志 —— 单条记录。"""
     timestamp: str = Field(..., description="日志产生时间，精确到 ns（ISO 8601）")
