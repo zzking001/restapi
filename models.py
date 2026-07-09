@@ -55,7 +55,7 @@ class LogLevel(str, Enum):
 # ---------- 1. 时间同步状态日志（报告004 第4.1.1节）----------
 #[时间戳] [设备ID] [端口号] [日志级别] [gPTP域] [时钟角色] [事件类型] [关键字段键值对] [描述信息]
 
-#时钟角色
+#时钟角色，ClockRole 的值域是 IEEE 802.1AS 标准严格定义的，只有 5 种角色
 class ClockRole(str, Enum):
     GM = "GM"
     BC = "BC"
@@ -83,7 +83,7 @@ class TimeSyncLogEntry(BaseModel):
     description: str = Field("", description="描述信息")
 
 
-class TimeSyncLogResponse(BaseModel):
+class TimeSyncLogResponse(BaseModel):#定义 API 返回给客户端的响应数据结构
     """时间同步日志查询响应。"""
     total: int
     page: int
