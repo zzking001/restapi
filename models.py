@@ -6,36 +6,6 @@ from pydantic import BaseModel, Field
 
 
 
-# ==================== 只读资源模型 ====================
-
-class TSNCapability(BaseModel):
-    """网卡 TSN 能力。"""
-    capable: bool
-    hw_timestamp: bool
-    qbv_supported: bool
-    qbu_supported: bool
-    qci_supported: bool
-    qav_supported: bool
-    gptp_capable: bool
-
-
-class InterfaceInfo(BaseModel):
-    """网卡信息。"""
-    name: str
-    ip: str
-    mac: str
-    status: str
-    speed: str
-    mtu: int
-    tsn: TSNCapability
-
-
-class InterfaceTSNResponse(BaseModel):
-    """网卡 TSN 能力响应。"""
-    interface: str
-    tsn: TSNCapability
-
-
 # ==================== 五类 TSN 设备日志模型（报告004 第4.1节）====================
 
 from datetime import datetime

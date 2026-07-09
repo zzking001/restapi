@@ -74,45 +74,6 @@ def validate(data, required_fields, context=""):
 
 
 
-# ========== 网络接口测试（只读） ==========
-
-# === GET：网卡列表 ===
-print("\n=== GET /interfaces（网卡列表）===")
-r = req("GET", "/interfaces")
-if r is None:#请求失败，返回 None
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)#转换数据类型
-    if isinstance(data, list):#检查数据结构
-        print(r.status_code, "->", len(data), "个网卡")
-    else:
-        print(f"  [结构错误] 期望 list，实际 {type(data).__name__}")
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === GET：eth0 详情 ===
-print("=== GET /interfaces/eth0（eth0 详情）===")
-r = req("GET", "/interfaces/eth0")
-if r is None:
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)
-    if data and validate(data, ["name", "ip", "mac", "status"], "网卡详情"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
-
-# === GET：eth0 TSN 能力 ===
-print("=== GET /interfaces/eth0/tsn（eth0 TSN 能力）===")
-r = req("GET", "/interfaces/eth0/tsn")
-if r is None:
-    pass
-elif r.status_code == 200:
-    data = safe_json(r)
-    if data and validate(data, ["interface", "tsn"], "TSN 能力"):
-        print(r.status_code, "->", data)
-else:
-    print(f"  [应用错误] {r.status_code} {r.reason}")
 
 
 # ==================== 日志查询测试 ====================

@@ -41,6 +41,7 @@ def _read_lines(filename: str) -> list[str]:
 
 
 # ==================== 加载器 ====================
+#对应data中各个log
 
 def load_timesync_logs() -> list[TimeSyncLogEntry]:
     """格式: timestamp|device_id|port|level|gptp_domain|clock_role|event_type|kv_pairs|description"""
