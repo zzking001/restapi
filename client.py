@@ -8,7 +8,7 @@ from requests.exceptions import ConnectionError, Timeout
 #.get(先去系统环境变量里找的值，默认值)
 #配置过程类似于在终端中输入：export TSN_API_BASE="http://127.0.0.1:5000/api" 
 BASE = os.environ.get("TSN_API_BASE", "http://127.0.0.1:5000/api")
-BASE_MGMT = os.environ.get("TSN_API_BASE_MGMT", "http://127.0.0.1:5001/api")
+BASE_MGMT = os.environ.get("TSN_API_BASE_MGMT", "http://127.0.0.1:5000/api")
 TIMEOUT = 5  # 秒：超过这个时间没响应就放弃，不让脚本无限期挂着
 MAX_RETRIES = 3  # 失败最多重试几次
 
@@ -570,11 +570,6 @@ print("=== GET /logs/filtering?level=CRITICAL ===")
 r = req("GET", "/logs/filtering", params={"level": "CRITICAL"})
 if r:
     print(f"-> {r.status_code}（预期 422）")
-
-print("=== GET /logs/config?level=FATAL ===")
-r = req("GET", "/logs/config", params={"level": "FATAL"})
-if r:
-    print(f"-> {r.status_code}（预期 422）- 注意：FATAL 是有效枚举值")
 
 print("=== GET /mgmt/netconf?severity=CRITICAL ===")
 r = req("GET", "/mgmt/netconf", base=BASE_MGMT, params={"severity": "CRITICAL"})
