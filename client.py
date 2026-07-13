@@ -8,7 +8,6 @@ from requests.exceptions import ConnectionError, Timeout
 #.get(先去系统环境变量里找的值，默认值)
 #配置过程类似于在终端中输入：export TSN_API_BASE="http://127.0.0.1:5000/api" 
 BASE = os.environ.get("TSN_API_BASE", "http://127.0.0.1:5000/api")
-BASE_LOGS = os.environ.get("TSN_API_BASE_LOGS", "http://127.0.0.1:5000/api")
 BASE_MGMT = os.environ.get("TSN_API_BASE_MGMT", "http://127.0.0.1:5001/api")
 TIMEOUT = 5  # 秒：超过这个时间没响应就放弃，不让脚本无限期挂着
 MAX_RETRIES = 3  # 失败最多重试几次
@@ -25,7 +24,7 @@ logging.basicConfig(
 
 log = logging.getLogger("client")
 #对应上面定义格式中的message
-log.info(f"启动：BASE={BASE}，LOGS={BASE_LOGS}，MGMT={BASE_MGMT}，TIMEOUT={TIMEOUT}s")
+log.info(f"启动：BASE={BASE}，MGMT={BASE_MGMT}，TIMEOUT={TIMEOUT}s")
 
 # ========== 工具函数层 ==========
 def req(method, path, base=None, **kwargs):
@@ -124,6 +123,36 @@ elif r.status_code == 200:
     if data and check_logs(data, "时间同步-PERIODIC_STATS"):
         print(r.status_code, f"-> total={data['total']}, page_size=3, 返回 {len(data['logs'])} 条")
 
+# 按端口过滤（补充）
+print("=== GET /logs/timesync?port=PORT-01 ===")
+r = req("GET", "/logs/timesync", params={"port": "PORT-01"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "时间同步-PORT-01"):
+        print(r.status_code, f"-> total={data['total']} 条 PORT-01 日志")
+
+# 按时钟角色过滤（补充）
+print("=== GET /logs/timesync?clock_role=Slave ===")
+r = req("GET", "/logs/timesync", params={"clock_role": "Slave"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "时间同步-Slave角色"):
+        print(r.status_code, f"-> total={data['total']} 条 Slave 角色日志")
+
+# 多条件组合：level + device_id + event_type（补充）
+print("=== GET /logs/timesync?level=ERROR&device_id=SW-01&event_type=SYNC_LOST ===")
+r = req("GET", "/logs/timesync", params={"level": "ERROR", "device_id": "SW-01", "event_type": "SYNC_LOST"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "时间同步-三条件组合"):
+        print(r.status_code, f"-> total={data['total']} 条（ERROR+SW-01+SYNC_LOST）")
+
 
 # ======== 2. 流量调度日志 ========
 print("\n=== GET /logs/scheduling（流量调度 - 全部）===")
@@ -154,6 +183,46 @@ elif r.status_code == 200:
     data = safe_json(r)
     if data and check_logs(data, "调度-SW-01-Q0"):
         print(r.status_code, f"-> total={data['total']} 条 SW-01 Q0 日志")
+
+# 按日志级别过滤（补充）
+print("=== GET /logs/scheduling?level=WARN ===")
+r = req("GET", "/logs/scheduling", params={"level": "WARN"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "调度-WARN"):
+        print(r.status_code, f"-> total={data['total']} 条 WARN 调度日志")
+
+# 按端口过滤（补充）
+print("=== GET /logs/scheduling?port=PORT-01 ===")
+r = req("GET", "/logs/scheduling", params={"port": "PORT-01"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "调度-PORT-01"):
+        print(r.status_code, f"-> total={data['total']} 条 PORT-01 调度日志")
+
+# 按流标识过滤（补充）
+print("=== GET /logs/scheduling?stream_id=STREAM-05 ===")
+r = req("GET", "/logs/scheduling", params={"stream_id": "STREAM-05"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "调度-STREAM-05"):
+        print(r.status_code, f"-> total={data['total']} 条 STREAM-05 调度日志")
+
+# 多条件组合：level + device_id + queue + schedule_type（补充）
+print("=== GET /logs/scheduling?level=ERROR&device_id=SW-01&queue=Q0&schedule_type=802.1Qbv-TAS ===")
+r = req("GET", "/logs/scheduling", params={"level": "ERROR", "device_id": "SW-01", "queue": "Q0", "schedule_type": "802.1Qbv-TAS"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "调度-四条件组合"):
+        print(r.status_code, f"-> total={data['total']} 条（ERROR+SW-01+Q0+Qbv）")
 
 
 # ======== 3. 流过滤与警管日志 ========
@@ -186,6 +255,46 @@ elif r.status_code == 200:
     if data and check_logs(data, "过滤-警管限流"):
         print(r.status_code, f"-> total={data['total']} 条警管限流日志")
 
+# 按日志级别过滤（补充）
+print("=== GET /logs/filtering?level=WARN ===")
+r = req("GET", "/logs/filtering", params={"level": "WARN"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "过滤-WARN"):
+        print(r.status_code, f"-> total={data['total']} 条 WARN 过滤日志")
+
+# 按设备过滤（补充）
+print("=== GET /logs/filtering?device_id=SW-01 ===")
+r = req("GET", "/logs/filtering", params={"device_id": "SW-01"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "过滤-SW-01"):
+        print(r.status_code, f"-> total={data['total']} 条 SW-01 过滤日志")
+
+# 按端口过滤（补充）
+print("=== GET /logs/filtering?port=PORT-01 ===")
+r = req("GET", "/logs/filtering", params={"port": "PORT-01"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "过滤-PORT-01"):
+        print(r.status_code, f"-> total={data['total']} 条 PORT-01 过滤日志")
+
+# 多条件组合：level + device_id + status + operation（补充）
+print("=== GET /logs/filtering?level=WARN&device_id=SW-01&status=Red&operation=丢弃 ===")
+r = req("GET", "/logs/filtering", params={"level": "WARN", "device_id": "SW-01", "status": "Red", "operation": "丢弃"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "过滤-四条件组合"):
+        print(r.status_code, f"-> total={data['total']} 条（WARN+SW-01+Red+丢弃）")
+
 
 # ======== 4. 网络资源配置日志 ========
 print("\n=== GET /logs/config（资源配置 - 全部）===")
@@ -217,6 +326,26 @@ elif r.status_code == 200:
     if data and check_logs(data, "配置-WARN"):
         print(r.status_code, f"-> total={data['total']} 条 WARN, 返回 {len(data['logs'])} 条")
 
+# 按设备过滤（补充）
+print("=== GET /logs/config?device_id=SW-02 ===")
+r = req("GET", "/logs/config", params={"device_id": "SW-02"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "配置-SW-02"):
+        print(r.status_code, f"-> total={data['total']} 条 SW-02 配置日志")
+
+# 多条件组合：level + device_id + event_type（补充）
+print("=== GET /logs/config?level=INFO&device_id=SW-01&event_type=LLDP_TOPO_CHANGE ===")
+r = req("GET", "/logs/config", params={"level": "INFO", "device_id": "SW-01", "event_type": "LLDP_TOPO_CHANGE"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "配置-三条件组合"):
+        print(r.status_code, f"-> total={data['total']} 条（INFO+SW-01+LLDP_TOPO_CHANGE）")
+
 
 # ======== 5. 硬件资源性能日志 ========
 print("\n=== GET /logs/hardware（硬件资源 - 全部）===")
@@ -247,6 +376,36 @@ elif r.status_code == 200:
     data = safe_json(r)
     if data and check_logs(data, "硬件-SW-02-WARN"):
         print(r.status_code, f"-> total={data['total']} 条 SW-02 WARN 硬件日志")
+
+# 仅按日志级别过滤（补充）
+print("=== GET /logs/hardware?level=WARN ===")
+r = req("GET", "/logs/hardware", params={"level": "WARN"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "硬件-WARN"):
+        print(r.status_code, f"-> total={data['total']} 条 WARN 硬件日志")
+
+# 仅按设备过滤（补充）
+print("=== GET /logs/hardware?device_id=SW-01 ===")
+r = req("GET", "/logs/hardware", params={"device_id": "SW-01"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "硬件-SW-01"):
+        print(r.status_code, f"-> total={data['total']} 条 SW-01 硬件日志")
+
+# 多条件组合：level + device_id + metric_type（补充）
+print("=== GET /logs/hardware?level=WARN&device_id=SW-02&metric_type=cpu ===")
+r = req("GET", "/logs/hardware", params={"level": "WARN", "device_id": "SW-02", "metric_type": "cpu"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "硬件-三条件组合"):
+        print(r.status_code, f"-> total={data['total']} 条（WARN+SW-02+cpu）")
 
 # 边界：翻页超出范围
 print("=== GET /logs/hardware?page=99&page_size=20（空页）===")
@@ -312,6 +471,26 @@ elif r.status_code == 200:
     if data and check_mgmt(data, "notifications", "NETCONF-SW-01"):
         print(r.status_code, f"-> total={data['total']} 条 SW-01 通知")
 
+# 按端口过滤（补充）
+print("=== GET /mgmt/netconf?port_id=PORT-01 ===")
+r = req("GET", "/mgmt/netconf", base=BASE_MGMT, params={"port_id": "PORT-01"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "notifications", "NETCONF-PORT-01"):
+        print(r.status_code, f"-> total={data['total']} 条 PORT-01 通知")
+
+# 多条件组合：severity + device_id + event_type（补充）
+print("=== GET /mgmt/netconf?severity=ERROR&device_id=SW-01&event_type=GM_CHANGE ===")
+r = req("GET", "/mgmt/netconf", base=BASE_MGMT, params={"severity": "ERROR", "device_id": "SW-01", "event_type": "GM_CHANGE"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "notifications", "NETCONF-三条件组合"):
+        print(r.status_code, f"-> total={data['total']} 条（ERROR+SW-01+GM_CHANGE）")
+
 
 # ======== 7. SNMP Trap ========
 print("\n=== GET /mgmt/snmp（SNMP Trap - 全部）===")
@@ -343,6 +522,16 @@ elif r.status_code == 200:
     if data and check_mgmt(data, "traps", "SNMP-SW-01"):
         print(r.status_code, f"-> total={data['total']} 条 SW-01 Trap")
 
+# 多条件组合：device_id + trap_type（补充）
+print("=== GET /mgmt/snmp?device_id=SW-01&trap_type=GPTP_OFFSET_OVER_LIMIT ===")
+r = req("GET", "/mgmt/snmp", base=BASE_MGMT, params={"device_id": "SW-01", "trap_type": "GPTP_OFFSET_OVER_LIMIT"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "traps", "SNMP-双条件组合"):
+        print(r.status_code, f"-> total={data['total']} 条（SW-01+gPTP偏移）")
+
 # 边界：空页
 print("=== GET /mgmt/snmp?page=99（空页）===")
 r = req("GET", "/mgmt/snmp", base=BASE_MGMT, params={"page": 99})
@@ -352,3 +541,124 @@ elif r.status_code == 200:
     data = safe_json(r)
     if data and check_mgmt(data, "traps", "SNMP-空页"):
         print(r.status_code, f"-> total={data['total']}, 返回 {len(data['traps'])} 条（预期 0）")
+
+
+# ==================== 错误 / 边界输入测试 ====================
+
+print("\n" + "=" * 60)
+print("错误 / 边界输入测试")
+print("=" * 60)
+
+# ---------- 无效枚举值 ----------
+print("\n--- 无效枚举值（预期 422）---")
+
+print("=== GET /logs/timesync?level=INVALID ===")
+r = req("GET", "/logs/timesync", params={"level": "INVALID"})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+    if r.status_code != 200:
+        detail = safe_json(r)
+        if detail:
+            print(f"   详情: {detail}")
+
+print("=== GET /logs/scheduling?level=UNKNOWN ===")
+r = req("GET", "/logs/scheduling", params={"level": "UNKNOWN"})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+print("=== GET /logs/filtering?level=CRITICAL ===")
+r = req("GET", "/logs/filtering", params={"level": "CRITICAL"})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+print("=== GET /logs/config?level=FATAL ===")
+r = req("GET", "/logs/config", params={"level": "FATAL"})
+if r:
+    print(f"-> {r.status_code}（预期 422）- 注意：FATAL 是有效枚举值")
+
+print("=== GET /mgmt/netconf?severity=CRITICAL ===")
+r = req("GET", "/mgmt/netconf", base=BASE_MGMT, params={"severity": "CRITICAL"})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+print("=== GET /mgmt/netconf?event_type=INVALID_TYPE ===")
+r = req("GET", "/mgmt/netconf", base=BASE_MGMT, params={"event_type": "INVALID_TYPE"})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+print("=== GET /mgmt/snmp?trap_type=INVALID_TRAP ===")
+r = req("GET", "/mgmt/snmp", base=BASE_MGMT, params={"trap_type": "INVALID_TRAP"})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+# ---------- 分页参数越界 ----------
+print("\n--- 分页参数越界（预期 422）---")
+
+print("=== GET /logs/timesync?page=0（page 最小为 1）===")
+r = req("GET", "/logs/timesync", params={"page": 0})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+print("=== GET /logs/scheduling?page=-1 ===")
+r = req("GET", "/logs/scheduling", params={"page": -1})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+print("=== GET /logs/filtering?page_size=0（page_size 最小为 1）===")
+r = req("GET", "/logs/filtering", params={"page_size": 0})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+print("=== GET /logs/config?page_size=201（page_size 最大为 200）===")
+r = req("GET", "/logs/config", params={"page_size": 201})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+print("=== GET /mgmt/netconf?page_size=999 ===")
+r = req("GET", "/mgmt/netconf", base=BASE_MGMT, params={"page_size": 999})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+print("=== GET /mgmt/snmp?page=-5 ===")
+r = req("GET", "/mgmt/snmp", base=BASE_MGMT, params={"page": -5})
+if r:
+    print(f"-> {r.status_code}（预期 422）")
+
+# ---------- 不存在的端点 ----------
+print("\n--- 不存在的端点（预期 404）---")
+
+print("=== GET /api/logs/nonexistent ===")
+r = req("GET", "/logs/nonexistent")
+if r:
+    print(f"-> {r.status_code}（预期 404）")
+
+print("=== GET /api/mgmt/nonexistent ===")
+r = req("GET", "/mgmt/nonexistent", base=BASE_MGMT)
+if r:
+    print(f"-> {r.status_code}（预期 404）")
+
+# ---------- 缺少必需参数（所有参数都有默认值，这里验证 API 健壮性）----------
+print("\n--- 极端分页值 ---")
+
+print("=== GET /logs/hardware?page=1&page_size=200（最大合法 page_size）===")
+r = req("GET", "/logs/hardware", params={"page": 1, "page_size": 200})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "硬件-page_size=200"):
+        print(r.status_code, f"-> total={data['total']}, page_size=200, 返回 {len(data['logs'])} 条（应≤200）")
+
+print("=== GET /mgmt/snmp?page_size=200（最大合法 page_size）===")
+r = req("GET", "/mgmt/snmp", base=BASE_MGMT, params={"page_size": 200})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_mgmt(data, "traps", "SNMP-page_size=200"):
+        print(r.status_code, f"-> total={data['total']}, page_size=200, 返回 {len(data['traps'])} 条（应≤200）")
+
+
+print("\n" + "=" * 60)
+print("全部测试完成")
+print("=" * 60)
