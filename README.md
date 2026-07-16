@@ -104,8 +104,8 @@ python client.py
 | 方法 | 路由 | 专属过滤参数 | 说明 |
 |------|------|-------------|------|
 | `GET` | `/api/logs/timesync` | `device_id`, `port`, `event_type`, `clock_role` | 时间同步状态日志 |
-| `GET` | `/api/logs/scheduling` | `device_id`, `port`, `schedule_type`, `queue`, `stream_id` | 流量整形与调度日志 |
-| `GET` | `/api/logs/filtering` | `device_id`, `port`, `operation`, `resource_type`, `status` | 流过滤与警管日志 |
+| `GET` | `/api/logs/scheduling` | `device_id`, `port`, `schedule_type`, `queue`, `stream_id`, `event` | 流量整形与调度日志 |
+| `GET` | `/api/logs/filtering` | `device_id`, `port`, `operation`, `resource_type`, `config_id`, `status` | 流过滤与警管日志 |
 | `GET` | `/api/logs/config` | `device_id`, `event_type` | 网络资源配置日志 |
 | `GET` | `/api/logs/hardware` | `device_id`, `metric_type` | 硬件资源性能日志 |
 
@@ -131,8 +131,14 @@ curl "http://localhost:5000/api/logs/timesync?event_type=PERIODIC_STATS&page_siz
 # 流量调度 — 过滤 Qbv 类型
 curl "http://localhost:5000/api/logs/scheduling?schedule_type=802.1Qbv-TAS"
 
+# 流量调度 — 按事件名称过滤
+curl "http://localhost:5000/api/logs/scheduling?event=GCL_LOAD"
+
 # 流过滤 — 过滤 Red 判定（超出警管速率）
 curl "http://localhost:5000/api/logs/filtering?status=Red"
+
+# 流过滤 — 按策略 ID 反查命中日志
+curl "http://localhost:5000/api/logs/filtering?config_id=PSFP-03"
 
 # 资源配置 — 过滤配置下发事件
 curl "http://localhost:5000/api/logs/config?event_type=CONFIG_DEPLOY"
@@ -249,7 +255,7 @@ timestamp|device_id|trap_oid|trap_type|oid_values
 
 ```python
 # main.py 动态注册逻辑
-MODULES = os.environ.get("TSN_API_MODULES", "all")
+MODULES = os.environ.get("TSN_API_MODULES", "all").lower().replace(" ", "")
 
 if MODULES in ("all", "logs"):
     from routers import logs
@@ -309,7 +315,7 @@ TimeSyncLogResponse {total, page, page_size, logs}
 
 | 阶段 | 状态 | 内容 |
 |------|------|------|
-| **Phase 1** | ✅ 完成 | 日志轨：mock 文件 + 五类查询端点 + 分页过滤；网管轨：NETCONF + SNMP Trap 查询端点 |
+| **Phase 1** | ✅ 完成 | 日志轨：mock 文件 + 五类查询端点（5~9 个参数/端点，含 page、page_size）+ 分页；网管轨：NETCONF + SNMP Trap 查询端点 |
 | **Phase 2** | 待开发 | 接入设备 `/var/log/tsn/` 真实日志路径 |
 | **Phase 3** | 规划中 | 时间范围过滤 + 日志级别阈值告警 |
 
