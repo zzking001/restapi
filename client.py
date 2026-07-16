@@ -214,6 +214,16 @@ elif r.status_code == 200:
     if data and check_logs(data, "调度-STREAM-05"):
         print(r.status_code, f"-> total={data['total']} 条 STREAM-05 调度日志")
 
+# 按事件名称过滤（新增）
+print("=== GET /logs/scheduling?event=GCL_LOAD ===")
+r = req("GET", "/logs/scheduling", params={"event": "GCL_LOAD"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "调度-GCL_LOAD"):
+        print(r.status_code, f"-> total={data['total']} 条 GCL_LOAD 事件日志")
+
 # 多条件组合：level + device_id + queue + schedule_type（补充）
 print("=== GET /logs/scheduling?level=ERROR&device_id=SW-01&queue=Q0&schedule_type=802.1Qbv-TAS ===")
 r = req("GET", "/logs/scheduling", params={"level": "ERROR", "device_id": "SW-01", "queue": "Q0", "schedule_type": "802.1Qbv-TAS"})
@@ -284,6 +294,16 @@ elif r.status_code == 200:
     data = safe_json(r)
     if data and check_logs(data, "过滤-PORT-01"):
         print(r.status_code, f"-> total={data['total']} 条 PORT-01 过滤日志")
+
+# 按配置ID过滤（新增）
+print("=== GET /logs/filtering?config_id=PSFP-03 ===")
+r = req("GET", "/logs/filtering", params={"config_id": "PSFP-03"})
+if r is None:
+    pass
+elif r.status_code == 200:
+    data = safe_json(r)
+    if data and check_logs(data, "过滤-config_id"):
+        print(r.status_code, f"-> total={data['total']} 条 PSFP-03 策略命中日志")
 
 # 多条件组合：level + device_id + status + operation（补充）
 print("=== GET /logs/filtering?level=WARN&device_id=SW-01&status=Red&operation=丢弃 ===")

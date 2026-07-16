@@ -204,6 +204,7 @@ def get_scheduling_logs(
     schedule_type: Optional[str] = Query(None, description="调度/整形类型"),
     queue: Optional[str] = Query(None, description="队列标识"),
     stream_id: Optional[str] = Query(None, description="流标识"),
+    event: Optional[str] = Query(None, description="调度事件名称，如 GCL_LOAD、QUEUE_OVERFLOW"),
 ):
     logs = load_scheduling_logs()
     if level is not None:
@@ -218,6 +219,8 @@ def get_scheduling_logs(
         logs = [l for l in logs if l.queue == queue]
     if stream_id is not None:
         logs = [l for l in logs if l.stream_id == stream_id]
+    if event is not None:
+        logs = [l for l in logs if l.event == event]
     return _paginate(logs, page, page_size)
 
 
@@ -232,6 +235,7 @@ def get_filtering_logs(
     port: Optional[str] = Query(None, description="端口（入端口->出端口）"),
     operation: Optional[str] = Query(None, description="动作"),
     resource_type: Optional[str] = Query(None, description="资源类型"),
+    config_id: Optional[str] = Query(None, description="过滤策略/配置标识，按策略 ID 反查命中日志"),
     status: Optional[str] = Query(None, description="状态/判定结果"),
 ):
     logs = load_filtering_logs()
@@ -245,6 +249,8 @@ def get_filtering_logs(
         logs = [l for l in logs if l.operation == operation]
     if resource_type is not None:
         logs = [l for l in logs if l.resource_type == resource_type]
+    if config_id is not None:
+        logs = [l for l in logs if l.config_id == config_id]
     if status is not None:
         logs = [l for l in logs if l.status == status]
     return _paginate(logs, page, page_size)
