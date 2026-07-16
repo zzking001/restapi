@@ -3,4 +3,3 @@ uvicorn[standard]>=0.30.0
 pydantic>=2.0.0
 aiofiles>=24.0.0
 gunicorn>=23.0.0
-requests>=2.32.0
