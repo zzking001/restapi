@@ -11,7 +11,7 @@ log = logging.getLogger("main")
 
 app = FastAPI(title="TSN Log API", version="2.1.0")
 
-
+#探活函数
 @app.get("/health")
 def health():
     return {"status": "ok"}
